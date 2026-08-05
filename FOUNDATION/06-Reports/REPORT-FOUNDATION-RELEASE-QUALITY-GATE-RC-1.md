@@ -141,6 +141,30 @@ machine-local `.claude/` settings and common temporary/log files from any public
 Git snapshot. This operational file is not part of the 25-entry Foundation
 Release Manifest.
 
+### 8.2 Separate External-Publication Authorization — 2026-08-05
+
+The Human Architect explicitly instructed completion of the external RC
+publication and then instructed execution of the revised technical implementation
+plan. This is the separate post-release-publication authorization required by the
+Release Manifest §13; it does not derive from FD-0004 and does not amend the
+internally Applied 25-entry Foundation Manifest.
+
+Authorized publication scope:
+
+- create the public repository `longyuanai/Research-OS`;
+- push only `main` and annotated tag `v1.0.0-rc.1`;
+- create a GitHub **Pre-release** identifying the RC as docs-first and non-production;
+- enable GitHub Private Vulnerability Reporting and safe baseline branch protection;
+- record the resulting remote URL, tag target, Release URL, and verification evidence.
+
+Explicit exclusions remain: Stable `1.0.0`, package/registry publication, Runtime
+implementation, Builder Pack execution, Workspace or Project activation, APES data,
+and any push of local backup refs. Sections 5–7 above remain the immutable
+application-time verification snapshot; this addendum is the current authorization
+record.
+
+**Execution status:** Authorized; publication pending final preflight audit.
+
 ---
 
 *End of Release Quality Gate Report — Foundation 1.0.0-rc.1 — PASS with Notes.*

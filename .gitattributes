@@ -1,5 +1,6 @@
 # Keep governance and implementation artifacts byte-stable across platforms.
 .gitattributes text eol=lf
+.gitignore text eol=lf
 *.md text eol=lf
 LICENSE text eol=lf
 FOUNDATION/VERSION text eol=lf

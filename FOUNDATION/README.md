@@ -6,9 +6,14 @@ The Foundation is governed by [`01-Constitution/constitution.md`](./01-Constitut
 
 ## Foundation Version
 
-`1.0.0-rc.1` — internally Applied; external publication not performed. See [`VERSION`](./VERSION).
+`1.0.0-rc.1` — internally Applied and sealed by a local annotated Git tag;
+external publication not performed. See [`VERSION`](./VERSION).
 
-> The Foundation platform is at internal RC `1.0.0-rc.1`. No git tag, GitHub Release, registry publication, Pack, Workspace, or Project activation is implied.
+> The Foundation content baseline is local commit `620312b`. Annotated tag
+> `v1.0.0-rc.1` points to publication-wrapper commit `139d455`, whose only tree
+> additions are the root Apache-2.0 `LICENSE` and `.gitattributes`; the 25-entry
+> Foundation Manifest is unchanged. No remote push, GitHub Release, registry
+> publication, Pack, Workspace, or Project activation is implied.
 
 ## Layout
 
@@ -33,7 +38,7 @@ The numbered prefixes above are normative; they define the order in which Founda
 - **Foundation Change Principle:** **Ratified and binding** by `FD-0002` on 2026-08-03 per Architect Decision, Part B. Implemented through existing governance artifacts only (`governance-model.md` §14; `change-control-policy.md` §§8–14). See `FOUNDATION/08-RFCs/FRFC-0001-foundation-change-principle.md` (Approved) and `FOUNDATION/09-Decisions/FD-0002-adopt-foundation-change-principle.md` (Ratified).
 - **Foundation Baseline:** **Collectively Approved** by `FD-0003` on 2026-08-04 per Architect Decision, Part B. FD-0003 approves 5 governance artifacts (`governance-model.md`, `roles-and-authority.md`, `approval-workflow.md`, `change-control-policy.md`, `disagreement-and-escalation.md`) and 10 Foundation Standards (`directory-standard.md`, `schema-standard.md`, `pack-standard.md`, `runtime-specification.md`, `quality-gate-standard.md`, `engine-specification.md`, `sdk-specification.md`, `plugin-specification.md`, `workspace-specification.md`, `release-specification.md`) for the exact versions enumerated in FD-0003 §6. The 15 candidates retain `Draft / In Review` document-level status; binding baseline authority derives from Ratified FD-0003 for the exact version enumerated. See `FOUNDATION/09-Decisions/FD-0003-approve-foundation-baseline.md`.
 - **Foundation Phase:** Foundation Baseline Approval cycle closed (FD-0003 Ratified, 2026-08-04). Foundation Baseline Review Cycle 01 closed (REVIEW-FOUNDATION-BASELINE-01 Disposition: Approved with Notes, 2026-08-04).
-- **Foundation v1.0 RC:** **internally Applied** as `1.0.0-rc.1` on 2026-08-04 under Ratified FD-0004. External publication remains `not-published`.
+- **Foundation v1.0 RC:** **internally Applied** as `1.0.0-rc.1` on 2026-08-04 under Ratified FD-0004. Local annotated tag `v1.0.0-rc.1` seals that Foundation content plus the two-file publication wrapper described above. External publication remains `not-published`.
 - **First-RC prerequisite repair:** `FRFC-0002` is **Approved with Notes** (2026-08-04). Its §9.2 repair was implemented under Ratified FD-0005, audited PASS with Notes, reviewed Approved with Notes, and reconciled into the RC package before Stage B.
 - **Implementing decision:** `FD-0005` is **Ratified** (2026-08-04; Review Approved with Notes). Release Specification `0.2.0-draft` repair is applied and approved.
 - **Foundation Version:** `1.0.0-rc.1` (internally Applied).
@@ -48,6 +53,13 @@ The numbered prefixes above are normative; they define the order in which Founda
 - No auto-commit, no auto-push, no auto-continue.
 
 **Foundation Change Principle (binding per FD-0002, 2026-08-03):** No new Foundation artifact may be introduced unless (1) the need is discovered during a Validation Cycle; (2) the gap is documented with evidence; (3) an RFC is proposed; (4) the RFC is reviewed and approved; (5) the Foundation is patched through the approved governance process. Idea alone is never sufficient to expand the Foundation. Operational workflow codified in `FOUNDATION/02-Governance/change-control-policy.md` §8.
+
+## Post-RC Implementation Direction
+
+The non-normative [Research-OS Technical Implementation Plan](../IMPLEMENTATION-PLAN.md)
+compares six active open-source agent/research platforms and proposes a minimal,
+evidence-first implementation path. It does not activate Runtime, Pack, Workspace,
+Project, or APES work; those changes still require their applicable governance cycle.
 
 ## Foundation Tasks (per Constitution §15)
 
