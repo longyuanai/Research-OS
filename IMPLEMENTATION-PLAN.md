@@ -52,12 +52,12 @@ SECURITY、CONTRIBUTING、对外定位和发布状态校正。公开的首个版
 | Gate | 要求 | 当前状态 |
 |---|---|---|
 | License | 代码与文档统一采用 Apache-2.0 | 已选择并添加标准许可证文本；不采用文档双许可证 |
-| Root README | 说明 docs-first RC、能力边界、目录入口、路线图和非生产状态 | 已创建，待发布前链接复核 |
-| Security | 漏洞报告渠道、凭据与 Project 数据处理规则 | 已创建，待远端启用 Private Vulnerability Reporting |
+| Root README | 说明 docs-first RC、能力边界、目录入口、路线图和非生产状态 | 已创建；发布前本地链接复核通过 |
+| Security | 漏洞报告渠道、凭据与 Project 数据处理规则 | 已创建；Private Vulnerability Reporting、Secret Scanning、Push Protection 与 Dependabot 已启用 |
 | Contributing | RFC/FD/PRFC/PD 路径、Review 与 DCO/CLA 选择 | 已创建；首阶段不采用 CLA/DCO |
-| Secret/Privacy | 强密钥扫描、路径/用户名/客户数据扫描 | 工作区扫描已通过；Git 发布身份已改用 noreply，待提交后终检 |
-| Release Integrity | `main`、`v1.0.0-rc.1`、Release Notes、Manifest 状态一致 | Foundation 基线 `620312b`；含 License 封装的本地 tag commit `139d455`；外部未发布 |
-| Branch Protection | PR Review、必需检查、禁止强推 tag | 远端创建后配置 |
+| Secret/Privacy | 强密钥扫描、路径/用户名/客户数据扫描 | 发布前终检通过；公开可达 Git 历史使用 noreply；0 强密钥/个人路径/邮箱命中 |
+| Release Integrity | `main`、`v1.0.0-rc.1`、Release Notes、Manifest 状态一致 | Public 仓库与 docs-first Pre-release 已验证；tag `139d455`，发布时 main `4c2f32d` |
+| Branch Protection | PR Review、必需检查、禁止强推 tag | `main` 禁止强推/删除并要求线性历史；`v*` 禁止删除/非快进更新；审批与 required checks 待独立 Reviewer/CI 就绪后启用 |
 
 ## 3. GitHub 同类项目调研
 

@@ -1,6 +1,6 @@
 ---
 id: RELEASE-1.0.0-rc.1
-title: Research-OS Foundation 1.0.0-rc.1 (Applied Internally; Not Published)
+title: Research-OS Foundation 1.0.0-rc.1 (Applied; GitHub Pre-release Published)
 artifact-type: Release
 status: Applied
 version: 1.0.0-rc.1
@@ -14,7 +14,7 @@ release-type: rc
 release-version: 1.0.0-rc.1
 release-vendor: Research-OS Foundation
 release-name: Research-OS Foundation 1.0.0-rc.1
-release-description: First Foundation Release Candidate for Research-OS. Internally applied the Foundation version transition from 0.1.0-dev to 1.0.0-rc.1. External publication remains unauthorized.
+release-description: First Foundation Release Candidate for Research-OS. Internally applied the Foundation version transition from 0.1.0-dev to 1.0.0-rc.1 on 2026-08-04, then externally published as a docs-first GitHub Pre-release under a separate Human Architect instruction on 2026-08-05. FD-0004 itself does not authorize external publication.
 authorizing-fd: FD-0004-authorize-foundation-rc-1
 manifest: MANIFEST-FOUNDATION-1.0.0-rc.1
 release-manager: Foundation Release Manager (role-based; per roles-and-authority.md)
@@ -30,13 +30,13 @@ dependencies:
   - FRFC-0002-reconcile-first-rc-prerequisites
   - REVIEW-FOUNDATION-RELEASE-GATE-01
 release-gate-authority: REVIEW-FOUNDATION-RELEASE-GATE-01 (Approved with Notes, 2026-08-04, Human Architect)
-external-publication-status: not-published
+external-publication-status: github-pre-release-published
 supersession: none
 lifecycle-stage: Applied
-last-transition: 2026-08-04 (Draft → Approved → Applied — Stage B Human Approval and internal atomic application; not published)
+last-transition: 2026-08-05 (separate external GitHub Pre-release publication; Foundation lifecycle remains Applied)
 ---
 
-# Release — Research-OS Foundation 1.0.0-rc.1 (Applied Internally; Not Published)
+# Release — Research-OS Foundation 1.0.0-rc.1 (Applied; GitHub Pre-release Published)
 
 ## 0. Post-FD-0005 Repair Reconciliation — Pre-Application Snapshot
 
@@ -75,10 +75,35 @@ Stage B Human Architect re-review. This snapshot is superseded by §0A.
 
 **Quality Gate:** PASS with Notes; 16/16 gates PASS; 0 blocking findings.
 
-**External publication:** `not-published`. No git tag, push, GitHub Release,
-registry publication, Pack, Workspace, Project, APES, or implementation action.
+**External publication at the Stage B application checkpoint:** `not-published`.
+No git tag, push, GitHub Release, registry publication, Pack, Workspace, Project,
+APES, or implementation action had occurred at that checkpoint.
 
-This section supersedes all earlier Draft/current-state notices in this file.
+This section supersedes all earlier Draft/current-state notices for the internal
+application lifecycle. Its publication-status sentence is later superseded by §0B
+on `main`; the tagged copy intentionally preserves this pre-publication snapshot.
+
+## 0B. Separate External Publication Record — Current Publication State on `main`
+
+The Human Architect separately authorized external RC publication on 2026-08-05.
+This authorization is independent of FD-0004 and does not change the internally
+Applied Foundation composition or its 25-entry Manifest.
+
+- **Repository:** `https://github.com/longyuanai/Research-OS` (Public).
+- **Release:** `https://github.com/longyuanai/Research-OS/releases/tag/v1.0.0-rc.1`.
+- **Release state:** non-draft GitHub Pre-release; published
+  `2026-08-05T06:05:21Z`.
+- **Annotated tag object:** `0a61aa1fc9b187618d16e8f4b901ce8fc7e98490`.
+- **Tag target:** `139d455dc0f71525b88e010a566cf99b05740c6e`.
+- **Tag contents:** sanitized Foundation baseline plus root Apache-2.0 `LICENSE`
+  and `.gitattributes` publication metadata.
+- **Publication boundary:** docs-first/no-runtime; no registry, Stable Release,
+  Pack, Runtime, Workspace, Project, APES, or private data was published.
+
+This §0B supersedes only current external-publication status. All Stage A and Stage B
+passages remain timestamped historical evidence. Because this addendum was written
+after publication, it exists on `main` and does not retroactively alter the immutable
+tagged snapshot.
 
 > **Historical Stage A status notice (superseded by §0A).** This Release instance was
 > authored in **Draft** status at the Stage A Decision Package Preparation stage per

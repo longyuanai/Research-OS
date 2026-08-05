@@ -163,7 +163,34 @@ and any push of local backup refs. Sections 5–7 above remain the immutable
 application-time verification snapshot; this addendum is the current authorization
 record.
 
-**Execution status:** Authorized; publication pending final preflight audit.
+**Execution status:** Completed and verified.
+
+Publication evidence:
+
+- Public repository: `https://github.com/longyuanai/Research-OS`;
+- initial publication-time `main`: `4c2f32dcc24b25f94d1bce0bb1a326f8cc4e489b`;
+- annotated tag object: `0a61aa1fc9b187618d16e8f4b901ce8fc7e98490`;
+- tag target: `139d455dc0f71525b88e010a566cf99b05740c6e`;
+- GitHub Release: `https://github.com/longyuanai/Research-OS/releases/tag/v1.0.0-rc.1`;
+- Release state: non-draft, Pre-release, published `2026-08-05T06:05:21Z`;
+- GitHub-detected license: Apache-2.0;
+- only `main` and `v1.0.0-rc.1` were pushed; local recovery refs were not pushed.
+
+Repository security verification:
+
+- Private Vulnerability Reporting: enabled;
+- Secret Scanning and Push Protection: enabled;
+- Dependabot vulnerability alerts and security updates: enabled;
+- Actions default workflow permission: read-only; workflow PR approval disabled;
+- `main`: linear history required; force-push and deletion disabled; conversation
+  resolution required;
+- `v*` tags: active ruleset prohibits deletion and non-fast-forward updates, with
+  no bypass actor.
+
+One required-approval rule is intentionally deferred until an independent Reviewer
+or maintainer exists; enabling it for a single-maintainer repository would prevent
+the only maintainer from merging their own Pull Request. Required status checks are
+also deferred until a real CI workflow has produced a stable check context.
 
 ---
 

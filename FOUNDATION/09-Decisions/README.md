@@ -9,7 +9,7 @@ FDs are the binding mechanism for architectural change at the Foundation level. 
 - `FD-0001-ratify-constitution.md` is **Ratified** (Status: Ratified; Date: 2026-08-03; Approver: Human Architect). The Constitution is **Ratified** at v0.1.0-draft.
 - `FD-0002-adopt-foundation-change-principle.md` is **Ratified** (Status: Ratified; Date: 2026-08-03; Approver: Human Architect). The Foundation Change Principle is **binding** through FD-0002.
 - `FD-0003-approve-foundation-baseline.md` is **Ratified** (Status: Ratified; Date: 2026-08-04; Approver: Human Architect). FD-0003 collectively approves the 15 candidate baseline components (5 governance artifacts + 10 Foundation Standards) enumerated in REPORT-FOUNDATION-BASELINE-01.md §4.3. The FD records the binding baseline authority derivation text for the exact versions enumerated; the 15 candidates retain `Draft / In Review` document-level status (in-place header status promotion is deferred to a future FD cycle).
-- `FD-0004-authorize-foundation-rc-1.md` is **Ratified** (2026-08-04). It authorizes the internally Applied Foundation `1.0.0-rc.1` Release; external publication remains unauthorized.
+- `FD-0004-authorize-foundation-rc-1.md` is **Ratified** (2026-08-04). It authorizes the internally Applied Foundation `1.0.0-rc.1` Release but does not authorize external publication. A separate Human Architect instruction authorized the docs-first GitHub Pre-release, completed on 2026-08-05.
 - `FD-0005-implement-first-rc-prerequisite-repair.md` is **Ratified** (2026-08-04). It implements Approved FRFC-0002; the authorized single-file §9.2 repair advanced Release Specification from `0.1.0-draft` to `0.2.0-draft` and passed its repair Audit and Review.
 - Five FDs are now Ratified.
 
@@ -22,7 +22,7 @@ FDs are the binding mechanism for architectural change at the Foundation level. 
 | `FD-0001-ratify-constitution.md` | **Ratified** (2026-08-03) | Ratify Constitution v0.1.0-draft |
 | `FD-0002-adopt-foundation-change-principle.md` | **Ratified** (2026-08-03) | Adopt Foundation Change Principle (FRFC-0001) |
 | `FD-0003-approve-foundation-baseline.md` | **Ratified** (2026-08-04) | Collectively approve 15 candidate baseline components |
-| `FD-0004-authorize-foundation-rc-1.md` | **Ratified** (2026-08-04) | Authorize internally Applied Foundation `1.0.0-rc.1`; not externally published |
+| `FD-0004-authorize-foundation-rc-1.md` | **Ratified** (2026-08-04) | Authorize internally Applied Foundation `1.0.0-rc.1`; external Pre-release is a separate 2026-08-05 action |
 | `FD-0005-implement-first-rc-prerequisite-repair.md` | **Ratified** (2026-08-04) | Implement Approved FRFC-0002 through an exact controlled patch; repair applied and approved |
 
 ## Naming
@@ -31,7 +31,7 @@ All FDs follow the pattern `FD-NNNN-short-title.md`. See `foundation-decision-po
 
 ## Future Work
 
-- Consider external publication only through a separately authorized release-publication action; the current internal RC remains `not-published`.
+- The separately authorized external publication of `v1.0.0-rc.1` completed on 2026-08-05 as a docs-first GitHub Pre-release. Any Stable, package-registry, successor RC, or expanded publication remains a separate future action.
 - A future FD **may** perform in-place header status promotion for the 15 candidate baseline components (currently `Draft / In Review`) only if scope warrants and the FCP workflow is followed. This is recorded as Condition C-2 in FD-0003 §9.
 - A future FD **may** address O-2 (pre-existing `v`-prefix inconsistency) only if version governance meaning or policy is changed (per Validation Cycle 02 Review Note A-4). O-2 is Open Observation, Non-blocking.
 - A future FD **may** supersede FD-0003 if a future Validation Cycle or Audit identifies a defect, per `foundation-decision-policy.md` §9 and `change-control-policy.md` §13 (rollback).

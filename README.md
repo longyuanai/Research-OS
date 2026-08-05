@@ -9,6 +9,9 @@ Runtime。
 > 生产 Runtime、可执行 Builder Pack、Workspace、已激活 Project 或 APES 业务
 > 数据，也不应被用于无人值守的生产任务。
 
+公开 Pre-release：[`v1.0.0-rc.1 — docs-first RC`](https://github.com/longyuanai/Research-OS/releases/tag/v1.0.0-rc.1)
+（2026-08-05）。
+
 ## 项目要解决什么
 
 普通 Agent 框架通常重点解决“怎样调用模型和工具”。Research-OS 进一步约束：
@@ -68,6 +71,8 @@ Deliverable 和审计记录。
 - 标签之后的 `main` 可以包含其余公开仓库材料和下一阶段提案；这些材料不会
   追溯性进入该 RC Manifest。
 - GitHub Release 应标记为 **Pre-release**，并明确“docs-first / no runtime”。
+- `v1.0.0-rc.1` 已按上述语义发布为 GitHub Pre-release；发布后状态记录位于
+  `main`，不追溯修改 tag。
 - Stable `1.0.0`、Package Registry 发布或生产可用性均未声明。
 
 ## 参与贡献
