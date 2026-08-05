@@ -337,7 +337,7 @@ used to create FD-0006 while this evidence is pending.
 
 | Version | Date | Change |
 |---|---|---|
-| `0.1.0-draft` | 2026-08-05 | Created implementation-triggered evidence record; compared one-path and five-path activation; recommended only `11-Runtime`; held all next steps for human Review. |
+| `0.1.0-draft` | 2026-08-05 | Created implementation-triggered evidence record; compared one-path and five-path activation; recommended only `11-Runtime`; held all next steps for human Review. This evidence is not usable for FCP Step 1 until the sequence `independent Validation Audit returns PASS or PASS with Notes` → `distinct Human Reviewer records Approved or Approved with Notes` → `separate Human Architect accepts the disposition` is fully satisfied; no part of that sequence is satisfied by this Draft Report. |
 
 ---
 

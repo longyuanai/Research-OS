@@ -68,10 +68,7 @@ Project, or APES work; those changes still require their applicable governance c
 prepared as **blocked Draft governance work**. The evidence provisionally supports
 only `FOUNDATION/11-Runtime/`; prefixes `12`–`15` remain unchanged and unclaimed. Both
 Builder self-Audits are `Draft / FAIL`, both human Reviews remain Pending, and the RFC
-is not eligible for submission. It creates no implementation directory, FD, Standard
-patch, ADR, dependency, Pack, Project, or APES artifact. Independent Audit, human
-Validation disposition, and Human Architect resolution of the non-Task Report schema
-fit are the next gates.
+is not eligible for submission. The [FRFC Builder self-Audit](04-Audits/AUDIT-FRFC-0003-activate-platform-implementation-profile.md) carries four open Major findings: F-01 — Validation 04 Step-1 evidence is not independently accepted; F-02 — no independent FRFC Auditor certifies the package; F-06 — the non-Task Builder Report has no schema-resolvable Task-ID; F-07 — closed Constitution Tasks 01–12 provide no approved post-RC governed-work-unit mechanism (no identifier, authority, lifecycle, or scope schema equivalent to §15.5), so no lawful implementation unit exists today. The provisional additive Minor/Major classification of the proposed Directory Standard change also awaits Human Architect confirmation after the §10.2/§11 wording is repaired. No FRFC submission, FD, Standard patch, ADR, dependency, Pack, Project, APES, or implementation code is authorized or created at this time. Independent Validation Audit, distinct Human Reviewer, separate Human Architect disposition for Validation 04, an independent FRFC Audit, the post-RC governed-work-unit mechanism, the non-Task Report schema fit, and the Minor/Major classification remain the next human gates.
 
 ## Foundation Tasks (per Constitution §15)
 

@@ -252,7 +252,7 @@ collected-at、collector、method、content hash、摘要和限制。无法保�
 
 Validation Cycle 04 的当前最小结论是：第一阶段只需要
 `FOUNDATION/11-Runtime/`。它仍只是待独立 Audit 和人工 Review 的提案；在
-FRFC、FD、受控目录补丁、ADR 和 §15.5 Task 全部通过前，不得创建。保留前缀
+FRFC、FD、受控目录补丁、ADR 和 `post-RC governed implementation work unit` 全部通过前，不得创建。保留前缀
 `12`–`15` 暂不命名、不建空目录，等各自出现真实产物需求后再分别验证。
 
 ```text
@@ -285,7 +285,7 @@ Phase 1 不创建数据库迁移、API、Web UI、SDK、Plugin、Workspace 或�
 - 独立 Audit、人工 Review、FD、受控目录补丁和 ADR；全部通过前不写代码。
 
 Gate：公开内容与 RC Manifest 一致、无敏感信息；Validation、FRFC、FD、受控
-目录补丁、ADR 和实现 Task 依次通过各自的独立 Audit 与人工门禁。
+目录补丁、ADR 和 `post-RC governed implementation work unit` 依次通过各自的独立 Audit 与人工门禁。
 
 **Execution checkpoint — 2026-08-05:** Public RC、GitHub Pre-release、发布记录和
 基础仓库保护已完成。Validation Cycle 04 与收窄后的 FRFC-0003 v0.2.0-draft
@@ -485,14 +485,12 @@ MVP 只有在以下条件全部满足时才称为完成：
 按顺序需要以下人工门禁：
 
 1. **公开仓库与许可证：** 已完成 Public + Apache-2.0 + docs-first Pre-release。
-2. **Validation 04：** 指定独立 Auditor；由 Human Reviewer 与 Human Architect
-   处分“只命名 `11-Runtime`”的证据结论。
-3. **Implementation Profile：** 解决非 Task Report Schema 问题，独立 Audit
-   FRFC，并由不同的 Human Reviewer / Human Architect 完成批准；之后才可处理 FD、
-   目录补丁、ADR 和实现 Task。
-4. **APES Source：** 提供真实本地路径或 Git URL，并确认哪些数据允许公开。
+2. **Validation 04：** 由独立 Auditor 给出 PASS 或 PASS with Notes；由独立的 Human Reviewer 给出 Approved 或 Approved with Notes；再由独立的 Human Architect 接受该 Step-1 证据结论。三者未全部就位前，Validation 04 的结论不进入 FRFC Step 2。
+3. **Implementation Profile FRFC：** 在 F-01 关闭后，独立 Audit FRFC；由不同于 Validation Reviewer 的 Human Reviewer 与 Human Architect 完成批准；Human Architect 同步处分非 Task Report 的 Schema/Task-ID 问题；并由 Human Architect 批准合法的 `post-RC governed implementation work unit` 机制（标识符、授权、生命周期、范围模式至少等价于 §15.5）以及路径变更的 Minor/Major 分类。之后才可处理 FD、受控目录补丁、ADR 和由该机制签发的工作单元。
+4. **FD / 受控目录补丁 / ADR：** 在第 3 项获批后，先冻结 FRFC-0003 的最大精确补丁（Header、§2、§3.2、§5.1、§5.2、§6、§7.1、§9.1、§10.1、§11、§12、Footer、Foundation README、Version、CHANGELOG；FD-0004 已授权的 `16-Releases` 历史状态以 Reconciliation 方式收尾，不扩大 FRFC-0003 的新激活范围），再走 FD-0006 → 受控补丁 → 补丁 Audit/Report/Review，再走 ADR 决定实现技术选型。
+5. **APES Source：** 提供真实本地路径或 Git URL，并确认哪些数据允许公开。
 
-在门禁 2–3 完成前不创建 Runtime 目录或代码；在门禁 4 前，不创建
+在门禁 2–4 完成前不创建 Runtime 目录或代码；在门禁 5 前，不创建
 `PROJECTS/APES` 或声称存在可执行 APES Builder Pack。
 
 ## 15. 官方来源

@@ -33,7 +33,7 @@ reliable Step-1 evidence for the minimum post-RC implementation path. A separate
 Architect must then decide whether to accept that disposition and authorize use of the
 evidence for a narrowed FRFC-0003.
 
-## §2. Materials Reviewed
+## §2. Materials for Future Review
 
 1. [Validation 04 Report](../04-Validation-Report/REPORT-VALIDATION-04.md).
 2. [Validation 04 Builder Self-Audit](../05-Validation-Audit/AUDIT-VALIDATION-04.md)
