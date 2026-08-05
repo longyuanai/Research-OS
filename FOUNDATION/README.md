@@ -63,6 +63,16 @@ compares six active open-source agent/research platforms and proposes a minimal,
 evidence-first implementation path. It does not activate Runtime, Pack, Workspace,
 Project, or APES work; those changes still require their applicable governance cycle.
 
+[Validation Cycle 04](../VALIDATION/04-Validation-Report/REPORT-VALIDATION-04.md) and
+[FRFC-0003](08-RFCs/FRFC-0003-activate-platform-implementation-profile.md) are now
+prepared as **blocked Draft governance work**. The evidence provisionally supports
+only `FOUNDATION/11-Runtime/`; prefixes `12`–`15` remain unchanged and unclaimed. Both
+Builder self-Audits are `Draft / FAIL`, both human Reviews remain Pending, and the RFC
+is not eligible for submission. It creates no implementation directory, FD, Standard
+patch, ADR, dependency, Pack, Project, or APES artifact. Independent Audit, human
+Validation disposition, and Human Architect resolution of the non-Task Report schema
+fit are the next gates.
+
 ## Foundation Tasks (per Constitution §15)
 
 | # | Task | Status |

@@ -1,8 +1,9 @@
 # Research-OS 技术实现方案
 
 **Status:** Proposed / Non-normative
-**Version:** 0.1.0-draft
+**Version:** 0.2.0-draft
 **Date:** 2026-08-05
+**Last Updated:** 2026-08-05 — narrowed Phase 1 to only `11-Runtime` after Validation 04
 **Foundation Baseline:** `1.0.0-rc.1`
 **Scope:** Foundation RC 之后的平台实现、首个 Builder Pack 与 APES 试点
 
@@ -12,9 +13,9 @@
 
 ## 1. 结论摘要
 
-Research-OS 应公开发布，但应先完成公开仓库门禁：许可证、根 README、
-SECURITY、CONTRIBUTING、对外定位和发布状态校正。公开的首个版本应明确标注
-为 **docs-first Foundation RC**，不是已经可运行的 AI 平台。
+Research-OS 已按本方案完成公开仓库门禁与首个 GitHub Pre-release，并明确标注
+为 **docs-first Foundation RC**，不是已经可运行的 AI 平台。当前工作转入实现
+治理；Validation 04 的最小建议只支持 `11-Runtime`，尚未授权任何代码。
 
 实现上采用“可验证工件优先的模块化单体”，而不是立即建设完整多租户平台：
 
@@ -249,54 +250,27 @@ collected-at、collector、method、content hash、摘要和限制。无法保�
 
 ## 7. 建议代码布局
 
-以下目录只是提案。激活 `FOUNDATION/11-*` 至 `15-*` 或创建 `PROJECTS/APES`
-之前，必须先完成对应治理决策。
+Validation Cycle 04 的当前最小结论是：第一阶段只需要
+`FOUNDATION/11-Runtime/`。它仍只是待独立 Audit 和人工 Review 的提案；在
+FRFC、FD、受控目录补丁、ADR 和 §15.5 Task 全部通过前，不得创建。保留前缀
+`12`–`15` 暂不命名、不建空目录，等各自出现真实产物需求后再分别验证。
 
 ```text
 FOUNDATION/
-├── 11-Runtime/
-│   ├── pyproject.toml
-│   ├── src/research_os/
-│   │   ├── domain/
-│   │   ├── artifacts/
-│   │   ├── packs/
-│   │   ├── runtime/
-│   │   ├── orchestration/
-│   │   ├── workspaces/
-│   │   ├── evidence/
-│   │   ├── security/
-│   │   └── api/
-│   ├── migrations/
-│   └── tests/
-├── 12-SDKs/
-│   ├── python/
-│   └── typescript/
-├── 13-Plugins/
-│   ├── files/
-│   ├── web/
-│   ├── mcp/
-│   ├── github/
-│   └── obsidian/
-├── 14-Workspaces/
-│   ├── profiles/
-│   └── docker/
-└── 15-Quality-Gates/
-    ├── rules/
-    ├── schemas/
-    └── fixtures/
-
-PROJECTS/
-└── APES/                    # 仅在 FD 级激活和源项目盘点后创建
-    ├── 08-PRFCs/
-    ├── 10-ADRs/
-    ├── packs/
-    ├── evidence/
-    ├── reports/
-    └── source-reference.md
+└── 11-Runtime/             # 未来获批后的唯一 Phase 1 路径
+    ├── pyproject.toml
+    ├── src/research_os/
+    │   ├── domain/
+    │   ├── artifacts/
+    │   ├── packs/
+    │   ├── evidence/
+    │   └── security/
+    └── tests/
 ```
 
-Web UI 若进入实施，可先放在 `11-Runtime/apps/web/`，避免为了一个界面新增
-Foundation 顶层目录；后续如形成独立产品边界，再通过 FRFC/FD 调整。
+Phase 1 不创建数据库迁移、API、Web UI、SDK、Plugin、Workspace 或独立质量门
+目录。后续确有真实需求时，SDK、Plugin、Workspace、可执行 Quality Gate 和
+`PROJECTS/APES` 各自走 Validation / RFC / Decision，不沿用本阶段的授权。
 
 ## 8. 分阶段实施路线
 
@@ -306,10 +280,18 @@ Foundation 顶层目录；后续如形成独立产品边界，再通过 FRFC/FD 
 
 - 许可证决定、Root README、SECURITY、CONTRIBUTING。
 - 公开 GitHub 仓库、`main`、`v1.0.0-rc.1` 和 GitHub Pre-release。
-- FRFC：Implementation Profile 与 `11-*` 至 `15-*` 路径激活提案。
-- Audit/Review/FD 决策包；未获人工批准前不写运行时代码。
+- Validation Cycle 04：比较只命名 `11-Runtime` 与一次命名五个区域。
+- FRFC：只激活 `FOUNDATION/11-Runtime/` 的 Implementation Profile 提案。
+- 独立 Audit、人工 Review、FD、受控目录补丁和 ADR；全部通过前不写代码。
 
-Gate：公开内容与 RC Manifest 一致；无敏感信息；实现 RFC 获批。
+Gate：公开内容与 RC Manifest 一致、无敏感信息；Validation、FRFC、FD、受控
+目录补丁、ADR 和实现 Task 依次通过各自的独立 Audit 与人工门禁。
+
+**Execution checkpoint — 2026-08-05:** Public RC、GitHub Pre-release、发布记录和
+基础仓库保护已完成。Validation Cycle 04 与收窄后的 FRFC-0003 v0.2.0-draft
+已经准备，但两份 Builder self-Audit 均为 `FAIL`：独立 Auditor、人工 Validation
+处分、FRFC 独立 Audit，以及非 Task Report 的 Schema 处置仍未完成。因此实现
+授权 Gate 尚未通过，FD-0006、ADR、`11-*`–`15-*` 目录和代码均未创建。
 
 ### Phase 1 — Executable Pack Profile（5–7 天）
 
@@ -500,13 +482,17 @@ MVP 只有在以下条件全部满足时才称为完成：
 
 ## 14. 下一步决策
 
-按顺序只需要三个人工决定：
+按顺序需要以下人工门禁：
 
-1. **公开仓库与许可证：** Public + Apache-2.0（建议）。
-2. **Implementation Profile：** 是否授权起草 FRFC，激活实现目录和技术栈。
-3. **APES Source：** 提供真实本地路径或 Git URL，并确认哪些数据允许公开。
+1. **公开仓库与许可证：** 已完成 Public + Apache-2.0 + docs-first Pre-release。
+2. **Validation 04：** 指定独立 Auditor；由 Human Reviewer 与 Human Architect
+   处分“只命名 `11-Runtime`”的证据结论。
+3. **Implementation Profile：** 解决非 Task Report Schema 问题，独立 Audit
+   FRFC，并由不同的 Human Reviewer / Human Architect 完成批准；之后才可处理 FD、
+   目录补丁、ADR 和实现 Task。
+4. **APES Source：** 提供真实本地路径或 Git URL，并确认哪些数据允许公开。
 
-在决定 2 前，最多完成 Public RC 文档收口；在决定 3 前，不创建
+在门禁 2–3 完成前不创建 Runtime 目录或代码；在门禁 4 前，不创建
 `PROJECTS/APES` 或声称存在可执行 APES Builder Pack。
 
 ## 15. 官方来源
@@ -526,4 +512,4 @@ MVP 只有在以下条件全部满足时才称为完成：
 
 ---
 
-*End of Research-OS Technical Implementation Plan v0.1.0-draft.*
+*End of Research-OS Technical Implementation Plan v0.2.0-draft.*
