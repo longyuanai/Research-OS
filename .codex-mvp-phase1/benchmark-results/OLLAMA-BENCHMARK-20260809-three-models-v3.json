@@ -1,0 +1,129 @@
+{
+  "endpoint": "http://127.0.0.1:11434",
+  "fastest_structurally_qualified_model": "qwen2.5:7b",
+  "generated_at": "2026-08-08T17:03:45.981139Z",
+  "generation_profile": {
+    "max_output_tokens": 1536,
+    "num_ctx": 8192,
+    "temperature": 0.2,
+    "think": false
+  },
+  "models": [
+    "qwen3:1.7b",
+    "qwen2.5:3b-instruct-q4_K_M",
+    "qwen2.5:7b"
+  ],
+  "prompt_sha256": "c305609d8a6dfa422cf565413be70358092ec7861d3afbf5981a0e2996411400",
+  "provider": "ollama",
+  "qualified_score": 75,
+  "quality_scope": "检查结构、候选覆盖、未知项披露、验证计划和无来源精确数值；仍不证明事实正确性或推荐质量",
+  "results": [
+    {
+      "character_count": 1802,
+      "content": "### 研究准备草稿：ESP32、STM32、树莓派对比，用于本地环境监测原型\n\n---\n\n## 1. 候选项及各自适用边界\n\n- **ESP32**：基于ARM Cortex-M4内核，支持Wi-Fi和蓝牙，适合需要无线通信的环境监测项目，但算力和内存有限。\n- **STM32**：基于ARM Cortex-M系列，支持多种型号，适合需要高实时性的环境监测，但开发调试复杂，需外接调试器。\n- **树莓派**：基于Raspberry Pi 4 B，算力强，支持多种外设，适合需要高性能和复杂功能的环境监测，但成本较高。\n\n---\n\n## 2. 比较维度\n\n| 维度 | ESP32 | STM32 | 树莓派 |\n|------|--------|--------|---------|\n| 功能接口 | Wi-Fi、蓝牙、GPIO、PWM、ADC、SPI、I2C | 多种型号，支持GPIO、PWM、ADC、SPI、I2C、UART | 多种外设，支持GPIO、PWM、ADC、SPI、I2C、UART、USB、HDMI、SD卡 |\n| 实时性 | 一般，适合轻量级任务 | 一般，适合中等复杂任务 | 一般，适合高性能任务 |\n| 算力内存 | 16MB Flash，4MB SRAM | 128KB Flash，8KB SRAM | 256MB Flash，4GB SRAM |\n| 功耗散热 | 低功耗，适合电池供电 | 低功耗，适合电池供电 | 高功耗，适合桌面或台式机 |\n| 开发调试 | 无需外接调试器，支持USB调试 | 需外接调试器，开发复杂 | 无需外接调试器，支持USB调试 |\n| 供货成本 | 未知/待查证 | 未知/待查证 | 未知/待查证 |\n\n---\n\n## 3. 已知事实、推断和建议\n\n### 已知事实：\n- ESP32 价格在 50-100 元之间（根据型号）。\n- 树莓派 4 B 价格在 200-300 元之间。\n- STM32 的价格因型号差异较大，部分型号在 50-200 元之间。\n\n### 推断：\n- ESP32 适合轻量级、低功耗的环境监测，如温湿度、光照、PM2.5 等。\n- 树莓派 适合需要高性能、复杂功能的环境监测，如数据采集、图像处理、通信协议等。\n- STM32 适合需要高实时性的环境监测，如传感器数据的快速处理和传输。\n\n### 建议：\n- 若预算有限，优先选择 ESP32，适合基本环境监测需求。\n- 若需要高性能和复杂功能，优先选择树莓派。\n- 若需要高实时性和复杂处理，优先选择 STM32。\n\n---\n\n## 4. 未知/待查证项\n\n- ESP32 的具体型号、价格、功耗、内存等参数。\n- STM32 的具体型号、价格、功耗、内存等参数。\n- 树莓派 的具体型号、价格、功耗、内存等参数。\n- 三种主控在环境监测中的实际性能表现（如数据采集速度、稳定性、抗干扰能力）。\n- 三种主控的开发调试工具和环境支持情况。\n- 三种主控在本地环境监测原型中的实际适用性（如是否支持所需传感器、通信协议等）。\n\n---\n\n## 5. 可执行验证实验\n\n1. **实验一：温湿度监测**\n   - 使用 ESP32 采集温湿度数据，通过 Wi-Fi 上传至云端。\n   - 验证 ESP32 是否能稳定运行，是否支持温湿度传感器（如 DHT22）。\n\n2. **实验二：光照强度监测**\n   - 使用 ESP32 采集光照强度数据，通过 SPI 与光敏传感器连接。\n   - 验证 ESP32 是否能稳定运行，是否支持光照传感器（如 LDR）。\n\n3. **实验三：PM2.5 检测**\n   - 使用 ESP32 采集 PM2.5 数据，通过蓝牙与手机连接。\n   - 验证 ESP32 是否能稳定运行，是否支持 PM2.5 传感器（如 MQ135）。\n\n---\n\n## 6. 条件式建议\n\n- **新证据**：若 ESP32 的功耗低于 STM32，且价格在 100 元以内，可优先选择 ESP32。\n- **新证据**：若 树莓派 的开发调试工具支持 USB 调试，且价格在 200 元以内，可优先选择树莓派。\n- **新证据**：若 STM32 的开发调试工具支持在线调试，且价格在 100 元以内，可优先选择 STM32。",
+      "content_sha256": "ad6531b22e5eb1a1a75cd499c767e26539c6e321531239b0f9aebdeee0126141",
+      "done_reason": "stop",
+      "elapsed_seconds": 13.438,
+      "eval_count": 1101,
+      "failed_checks": [
+        "no_unsupported_precision"
+      ],
+      "model": "qwen3:1.7b",
+      "passed_checks": [
+        "minimum_length",
+        "all_candidates",
+        "comparison_dimensions",
+        "fact_inference_separation",
+        "uncertainty_disclosure",
+        "validation_plan",
+        "conditional_recommendation",
+        "no_fabricated_url",
+        "complete_response"
+      ],
+      "qualified": false,
+      "score": 90,
+      "status": "COMPLETED",
+      "thinking_character_count": 0,
+      "unsupported_precision_examples": [
+        "16MB",
+        "4MB",
+        "128KB",
+        "8KB",
+        "256MB",
+        "4GB",
+        "100 元",
+        "300 元",
+        "200 元",
+        "100 元"
+      ]
+    },
+    {
+      "character_count": 1685,
+      "content": "### 候选项及各自适用边界\n\n**ESP32**\n- ESP32 是一款由 Espressif Systems 开发的微控制器，适用于物联网设备和原型开发。\n- 价格范围在 50 元到 100 元之间。\n\n**STM32**\n- STM32 系列是 STMicroelectronics（意法半导体）推出的一款高性能微控制器系列。\n- 价格范围在 60 元到 150 元之间，具体取决于型号和功能集。\n\n**树莓派**\n- 树莓派是一款基于 ARM 架构的微型计算机，适用于教育、原型开发等场景。\n- 基本型号的价格大约为 30 元人民币左右。\n\n### 功能接口、实时性、算力内存、功耗散热、开发调试、供货成本六个比较维度\n\n**功能接口**\n- ESP32 提供 Wi-Fi 和蓝牙功能，适用于需要无线连接的应用场景。\n- STM32 提供丰富的外设接口和多种通信协议支持。\n- 树莓派提供多个GPIO端口以及USB接口。\n\n**实时性**\n- ESP32 的实时性能较好，适合对延迟要求较高的应用。\n- STM32 由于其高性能架构，在大多数情况下具有较好的实时性。\n- 树莓派的实时性取决于操作系统和应用程序设计，通常不如前两者。\n\n**算力内存**\n- ESP32 提供 192KB RAM 和 4MB Flash 存储空间。\n- STM32 系列提供从低功耗到高性能的不同型号，RAM 和存储容量范围广。\n- 树莓派的 RAM 和存储容量取决于具体型号。\n\n**功耗散热**\n- ESP32 的功耗较低，适合电池供电的应用。\n- STM32 由于其架构和设计，通常比 ESP32 更高一些。\n- 树莓派的功耗因操作系统而异，但整体上高于前两者。\n\n**开发调试**\n- ESP32 提供丰富的开发工具支持，包括 Arduino IDE 和 Espressif 的官方工具链。\n- STM32 有广泛的支持社区和丰富的开发资源。\n- 树莓派提供完整的 Linux 环境，适合需要更多操作系统功能的应用。\n\n**供货成本**\n- ESP32 的价格在 50 元到 100 元之间。\n- STM32 的价格范围从 60 元到 150 元不等。\n- 树莓派的基本型号售价大约为 30 元人民币左右。\n\n### 已知事实、推断和建议\n\n**已知事实**\n- ESP32 提供 Wi-Fi 和蓝牙功能，适用于需要无线连接的应用场景。\n- STM32 系列提供丰富的外设接口和多种通信协议支持。\n- 树莓派提供多个GPIO端口以及USB接口。\n\n**推断**\n- ESP32 的实时性能较好，适合对延迟要求较高的应用。\n- STM32 由于其高性能架构，在大多数情况下具有较好的实时性。\n- 树莓派的实时性取决于操作系统和应用程序设计，通常不如前两者。\n\n**建议**\n- 如果需要低成本且具备 Wi-Fi 和蓝牙功能的应用，ESP32 是一个不错的选择。\n- 对于需要丰富外设接口和多种通信协议支持的应用场景，STM32 系列可能是更好的选择。\n- 树莓派适合教育、原型开发等场景，特别是当需要完整的 Linux 环境时。\n\n### 未知/待查证项\n\n- ESP32 的具体型号及其在不同应用中的性能表现。\n- STM32 不同型号之间的功耗和散热差异。\n- 树莓派不同型号的实时性表现。\n\n### 可执行验证实验\n\n1. **ESP32 Wi-Fi 和蓝牙功能测试**：通过简单的无线连接任务，评估 ESP32 的实际表现。\n2. **STM32 外设接口和通信协议支持测试**：选择一个需要多种外设接口的应用场景进行开发，并对比不同型号的 STM32 在该应用中的性能差异。\n3. **树莓派实时性测试**：使用树莓派运行一个需要高实时性的任务，观察其在不同操作系统下的表现。\n\n### 什么新证据会改变选择\n\n- 新发现 ESP32 的具体型号或功能集对实际应用的影响。\n- 发现 STM32 不同型号之间的功耗和散热差异。\n- 发现树莓派特定型号的实时性表现。",
+      "content_sha256": "e08aa0a1fda8c7cd015fb332b1e9871dcbe3b04b47b35c184adbdb4449c9cd40",
+      "done_reason": "stop",
+      "elapsed_seconds": 16.078,
+      "eval_count": 954,
+      "failed_checks": [
+        "no_unsupported_precision"
+      ],
+      "model": "qwen2.5:3b-instruct-q4_K_M",
+      "passed_checks": [
+        "minimum_length",
+        "all_candidates",
+        "comparison_dimensions",
+        "fact_inference_separation",
+        "uncertainty_disclosure",
+        "validation_plan",
+        "conditional_recommendation",
+        "no_fabricated_url",
+        "complete_response"
+      ],
+      "qualified": false,
+      "score": 90,
+      "status": "COMPLETED",
+      "thinking_character_count": 0,
+      "unsupported_precision_examples": [
+        "50 元",
+        "100 元",
+        "60 元",
+        "150 元",
+        "30 元",
+        "192KB",
+        "4MB",
+        "50 元",
+        "100 元",
+        "60 元"
+      ]
+    },
+    {
+      "character_count": 1225,
+      "content": "### 研究准备草稿\n\n#### 1. 候选项及各自适用边界\n- **ESP32**：适用于低功耗、轻量级的物联网应用。\n- **STM32**：适用于中等复杂度的应用，如工业控制和传感器数据处理。\n- **树莓派**：适用于需要图形界面或运行复杂软件的应用。\n\n#### 2. 功能接口、实时性、算力内存、功耗散热、开发调试、供货成本六个比较维度\n\n| 比较维度 | ESP32 | STM32 | 树莓派 |\n| --- | --- | --- | --- |\n| **功能接口** | 支持多种传感器和外设，如Wi-Fi、蓝牙等。 | 多种通信协议支持，如SPI、I2C、UART等。 | 丰富的GPIO和USB接口，支持图形界面。 |\n| **实时性** | 较高，适用于需要快速响应的应用。 | 中等，适合中等复杂度的控制应用。 | 较低，适用于一般计算任务。 |\n| **算力内存** | 算法处理能力较弱，但足够完成简单的数据处理和传输任务。 | 适中的算力，支持复杂的算法实现。 | 强大的算力，适合运行复杂软件和图形界面。 |\n| **功耗散热** | 低功耗设计，适用于电池供电的设备。 | 中等功耗，适合需要长时间工作的应用。 | 较高功耗，不适合长期连续工作。 |\n| **开发调试** | 开发环境简单，支持Arduino IDE。 | 需要使用ST-Link或其他调试工具。 | 支持Linux和Windows系统，开发环境复杂但功能强大。 |\n| **供货成本** | 价格较低，适合预算有限的应用。 | 中等价格，适用于中等规模的项目。 | 较高价格，不适合预算紧张的应用。 |\n\n#### 3. 已知事实、推断和建议\n- **已知事实**：ESP32支持多种传感器接口；STM32具有较高的算力和丰富的通信协议支持。\n- **推断**：基于上述特性，ESP32适合简单的环境监测任务，而STM32适用于更复杂的控制应用。树莓派则更适合需要图形界面或复杂软件的应用场景。\n- **建议**：选择主控时需考虑具体应用场景的需求。\n\n#### 4. 未知/待查证项\n- 功耗和散热的具体数值（如待验证）。\n- 各种主控在本地环境监测中的实际表现数据（待验证）。\n\n#### 5. 可执行验证实验\n1. **功耗测试**：使用相同的传感器和外设，分别测量ESP32、STM32和树莓派的功耗情况。\n2. **实时性测试**：通过模拟环境监测任务，比较三种主控在响应时间和数据处理速度上的差异。\n3. **开发调试难度评估**：对比三种主控的开发环境设置复杂度及实际使用体验。\n\n#### 6. 条件式建议\n- 如果新证据表明ESP32在本地环境中表现不佳，则考虑选择STM32或树莓派。\n- 若发现STM32在功耗和散热方面有显著优势，优先选择STM32。\n- 树莓派如果在成本允许的情况下提供更好的性能，则可作为备选方案。",
+      "content_sha256": "e3e82ee980c65fdd2645444c0758931b6fb07ee2b5db873c0e1b5ae687a52e5c",
+      "done_reason": "stop",
+      "elapsed_seconds": 32.578,
+      "eval_count": 728,
+      "failed_checks": [],
+      "model": "qwen2.5:7b",
+      "passed_checks": [
+        "minimum_length",
+        "all_candidates",
+        "comparison_dimensions",
+        "fact_inference_separation",
+        "uncertainty_disclosure",
+        "validation_plan",
+        "conditional_recommendation",
+        "no_fabricated_url",
+        "no_unsupported_precision",
+        "complete_response"
+      ],
+      "qualified": true,
+      "score": 100,
+      "status": "COMPLETED",
+      "thinking_character_count": 0,
+      "unsupported_precision_examples": []
+    }
+  ],
+  "schema_version": "research-os-mvp-ollama-benchmark/0.1",
+  "system_prompt_sha256": "ea83408c7a5116de7b4ceacaaac892e41c9cae3c0a5ac5d65129b6886679e9ba"
+}

@@ -1,0 +1,64 @@
+{
+  "constitution_version": "0.1.0-draft",
+  "foundation_version": "1.0.0-rc.1",
+  "mission": {
+    "exit_conditions": [
+      "Any integrity check fails",
+      "A human approval is absent"
+    ],
+    "mission_id": "MISSION-MVP-three-task-demo",
+    "success_criteria": [
+      "Two Evidence records are created with independently reproducible hashes",
+      "One Mission Report cites both Evidence records",
+      "All three Tasks receive explicit human approval"
+    ],
+    "tasks": [
+      {
+        "input": {
+          "content": "The MVP must validate one declarative Builder Pack without executing Pack content.",
+          "limitations": "This observation validates the local JSON prototype profile only.",
+          "method": "Direct declaration in the isolated example Pack",
+          "source": "pack://MISSION-MVP-three-task-demo/task-01"
+        },
+        "name": "Capture the bounded MVP requirement",
+        "operation": "record_evidence",
+        "requires_approval": true,
+        "task_id": "TASK-MVP-01-capture-requirement"
+      },
+      {
+        "input": {
+          "content": "Each Task must stop at a human gate; advancing the Mission requires an explicit approval record.",
+          "limitations": "The prototype records approval identity as text and does not provide cryptographic identity proof.",
+          "method": "Runtime state-machine observation",
+          "source": "pack://MISSION-MVP-three-task-demo/task-02"
+        },
+        "name": "Capture the human-gate requirement",
+        "operation": "record_evidence",
+        "requires_approval": true,
+        "task_id": "TASK-MVP-02-capture-human-gate"
+      },
+      {
+        "input": {
+          "title": "Research-OS MVP Three-Task Mission Report"
+        },
+        "name": "Compose the evidence-backed Mission Report",
+        "operation": "compose_report",
+        "requires_approval": true,
+        "task_id": "TASK-MVP-03-compose-report"
+      }
+    ],
+    "title": "Validate a three-Task, human-gated, evidence-producing Mission"
+  },
+  "pack_id": "PACK-MVP-three-task-demo",
+  "pack_type": "Tool",
+  "permissions": {
+    "external_writes": false,
+    "network": false,
+    "subprocess": false
+  },
+  "schema_version": "research-os-mvp-pack/0.1",
+  "scope": "MISSION-MVP-three-task-demo",
+  "status": "Draft",
+  "supersedes": "none",
+  "version": "0.1.0"
+}

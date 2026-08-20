@@ -1,0 +1,81 @@
+{
+  "endpoint": "http://127.0.0.1:11434",
+  "fastest_structurally_qualified_model": "qwen2.5:3b-instruct-q4_K_M",
+  "generated_at": "2026-08-08T16:58:11.671114Z",
+  "models": [
+    "qwen3:1.7b",
+    "qwen2.5:3b-instruct-q4_K_M",
+    "qwen2.5:7b"
+  ],
+  "prompt_sha256": "c305609d8a6dfa422cf565413be70358092ec7861d3afbf5981a0e2996411400",
+  "provider": "ollama",
+  "qualified_score": 75,
+  "quality_scope": "仅检查结构、候选覆盖、未知项披露和验证计划；不证明事实正确性或推荐质量",
+  "results": [
+    {
+      "character_count": 205,
+      "content": "### 研究准备草稿\n\n---\n\n#### **1. 候选项及各自适用边界**  \n- **ESP32**：适用于低功耗、低成本的物联网原型，适合环境监测（如温湿度、光照）；  \n- **STM32（如STM32F4）**：适合需要高实时性（<10ms）的嵌入式任务，但需额外开发工具（如STM32CubeMX）；  \n- **树莓派（RPi）**：适合多功能整合（如传感器网络、数据处理），但功耗较高（>1W",
+      "content_sha256": "1a9ce6d102d936ea9816c0c4ccd85ac12142f10b87fce5edd7e51b7ac19d2539",
+      "elapsed_seconds": 16.078,
+      "failed_checks": [
+        "minimum_length",
+        "comparison_dimensions",
+        "fact_inference_separation",
+        "uncertainty_disclosure",
+        "validation_plan",
+        "conditional_recommendation"
+      ],
+      "model": "qwen3:1.7b",
+      "passed_checks": [
+        "all_candidates",
+        "no_fabricated_url"
+      ],
+      "qualified": false,
+      "score": 25,
+      "status": "COMPLETED"
+    },
+    {
+      "character_count": 1311,
+      "content": "### 候选项及各自适用边界\n\n- **ESP32**：ESP32 是一款由 Espressif Systems 开发的单片机（SoC），它结合了 Wi-Fi 和蓝牙功能。适用于需要无线通信的应用，如本地环境监测原型中的数据传输和接收。\n- **STM32**：STM32 系列是意法半导体开发的一款高性能微控制器系列，提供丰富的外设接口和强大的处理能力。适合对实时性、算力有较高要求的项目。\n- **树莓派**：树莓派是一种基于 ARM 架构的单板计算机，具有多种版本，适用于需要计算资源较多的应用场景。对于本地环境监测原型来说，它可能过于复杂且成本偏高。\n\n### 功能接口、实时性、算力内存、功耗散热、开发调试、供货成本六个比较维度\n\n- **功能接口**：\n  - ESP32：支持 Wi-Fi 和蓝牙。\n  - STM32：根据型号不同，支持多种外设接口。\n  - 树莓派：提供丰富的输入输出接口。\n\n- **实时性**：\n  - ESP32：适用于需要低延迟的应用场景。\n  - STM32：通常具有更好的实时性能。\n  - 树莓派：实时性取决于其版本和操作系统，可能不如前两者。\n\n- **算力内存**：\n  - ESP32：算力有限，但可通过扩展硬件实现增强。\n  - STM32：提供多种型号以满足不同需求。\n  - 树莓派：通常配备较大内存和存储空间。\n\n- **功耗散热**：\n  - ESP32：低功耗设计，适用于电池供电的应用。\n  - STM32：根据型号不同，功耗差异大。\n  - 树莓派：一般需要散热措施，特别是高功率版本。\n\n- **开发调试**：\n  - ESP32：有丰富的开发工具和社区支持。\n  - STM32：同样拥有广泛的支持资源。\n  - 树莓派：基于 Linux 的操作系统，可能需要更多学习成本。\n\n- **供货成本**：\n  - ESP32：价格相对较低。\n  - STM32：根据型号不同，价格差异大。\n  - 树莓派：高版本的成本较高。\n\n### 已知事实、推断和建议\n\n已知事实：\n- ESP32 和 STM32 都是单片机系列，适用于本地环境监测原型。\n- 树莓派虽然功能强大，但成本偏高且复杂度大。\n\n推断：\n- 选择 ESP32 可能更符合预算要求，并满足基本的无线通信需求。\n- 对于实时性要求不高的项目，STM32 或树莓派可能过于复杂和昂贵。\n\n建议：\n- 根据具体应用需求选择主控芯片。如果需要低功耗、简单且成本控制在 1000 元内，ESP32 是一个合适的选择。\n- 如果预算允许，并且对实时性有较高要求，则可以考虑 STM32 或树莓派。\n\n### 未知/待查证项\n\n- **ESP32 的具体功能接口和外设支持情况**：需要进一步了解 ESP32 具体型号的功能接口和外设支持。\n- **STM32 不同型号的算力、内存和功耗差异**：不同型号的 STM32 在算力、内存和功耗方面存在较大差异，需明确具体型号的信息。\n- **树莓派不同版本的成本和性能表现**：高功率版本的成本和性能表现如何？是否有必要选择更高版本？\n\n### 验证实验",
+      "content_sha256": "a7b2ba17d18ad3bc2ecff58dc49b84ebe7b88a02093eeb6a3edf0ef70b65f132",
+      "elapsed_seconds": 32.219,
+      "failed_checks": [],
+      "model": "qwen2.5:3b-instruct-q4_K_M",
+      "passed_checks": [
+        "minimum_length",
+        "all_candidates",
+        "comparison_dimensions",
+        "fact_inference_separation",
+        "uncertainty_disclosure",
+        "validation_plan",
+        "conditional_recommendation",
+        "no_fabricated_url"
+      ],
+      "qualified": true,
+      "score": 100,
+      "status": "COMPLETED"
+    },
+    {
+      "character_count": 1390,
+      "content": "### 研究准备草稿\n\n#### 1. 候选项及各自适用边界\n\n- **ESP32**：适用于低功耗、轻量级应用，如传感器数据采集和简单的控制任务。\n- **STM32**：适用于中等复杂度的应用场景，如工业自动化、智能家居系统等。\n- **树莓派**：适用于需要图形界面或运行Linux系统的应用场景，如环境监测站、小型服务器。\n\n#### 2. 功能接口、实时性、算力内存、功耗散热、开发调试、供货成本六个比较维度\n\n| 比较维度 | ESP32           | STM32          | 树莓派        |\n|----------|-----------------|---------------|--------------|\n| **功能接口**  | GPIO, SPI, I2C, UART等 | GPIO, SPI, I2C, UART等 | USB, HDMI, Ethernet, Wi-Fi, Bluetooth等 |\n| **实时性**   | 较高，适合快速响应的应用 | 中等，适用于中等复杂度任务 | 较低，适合长时间运行的任务 |\n| **算力内存**  | 算法执行能力较弱，但足够处理简单的控制逻辑和数据采集 | 算法执行能力强，支持复杂的算法实现 | 算法执行能力强，支持多种操作系统和应用开发 |\n| **功耗散热**  | 较低，适合长时间运行的环境 | 中等，适用于中等复杂度任务 | 较高，不适合长期高温环境下使用 |\n| **开发调试**  | 开发工具丰富，社区活跃 | 开发工具丰富，文档齐全 | 开发工具丰富，但可能需要更多学习成本 |\n| **供货成本**  | 较低，适合预算有限的项目 | 中等，适用于中等复杂度任务 | 较高，适合功能需求较高的项目 |\n\n#### 3. 已知事实、推断和建议\n\n- **已知事实**：ESP32 和 STM32 都支持多种通信接口，而树莓派则提供了更多的外设接口。\n- **推断**：在低功耗要求下，ESP32 是一个不错的选择；对于中等复杂度的任务，STM32 更为合适；如果需要图形界面或运行Linux系统，则应选择树莓派。\n- **建议**：根据环境监测的具体需求来选择合适的主控。例如，如果主要任务是传感器数据采集和简单的控制逻辑，ESP32 是一个经济的选择。\n\n#### 4. 未知/待查证项\n\n- 待查证项1：具体项目的功耗要求是否严格限制在低功耗范围内。\n- 待查证项2：是否有特定的开发工具或库支持环境监测任务。\n- 待查证项3：树莓派在本地环境下的供货成本和可获得性。\n\n#### 5. 可执行验证实验\n\n1. **传感器数据采集测试**：使用ESP32、STM32和树莓派分别连接相同的传感器，记录其数据采集的准确性和稳定性。\n2. **实时响应测试**：模拟突发的数据传输需求，观察三种主控在不同负载下的反应速度。\n3. **功耗对比测试**：在相同的工作条件下，测量三种主控的能耗情况。\n\n#### 6. 条件式建议\n\n- 如果新证据表明ESP32在本地环境中的供货成本更低且满足所有功能要求，则应优先选择ESP32。\n- 若发现STM32在特定传感器接口上的支持更为完善，则考虑使用STM32。\n- 如有新的开发工具或库能够显著提高",
+      "content_sha256": "98fd8dc1e57918bdba5bee9ae11246babf6f392c078ed226b1b9333fd9d7dcbd",
+      "elapsed_seconds": 34.094,
+      "failed_checks": [],
+      "model": "qwen2.5:7b",
+      "passed_checks": [
+        "minimum_length",
+        "all_candidates",
+        "comparison_dimensions",
+        "fact_inference_separation",
+        "uncertainty_disclosure",
+        "validation_plan",
+        "conditional_recommendation",
+        "no_fabricated_url"
+      ],
+      "qualified": true,
+      "score": 100,
+      "status": "COMPLETED"
+    }
+  ],
+  "schema_version": "research-os-mvp-ollama-benchmark/0.1"
+}

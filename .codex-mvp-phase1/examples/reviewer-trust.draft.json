@@ -1,0 +1,22 @@
+{
+  "keys": [
+    {
+      "identity": "reviewer@example",
+      "public_key": "ssh-ed25519 REPLACE_WITH_BASE64_PUBLIC_KEY",
+      "role": "reviewer",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2027-01-01T00:00:00Z"
+    }
+  ],
+  "registry_id": "project-reviewers",
+  "requirements": [
+    {
+      "decision": "Approved",
+      "minimum_signatures": 1,
+      "role": "reviewer",
+      "task_id": "*"
+    }
+  ],
+  "schema_version": "research-os-mvp-reviewer-trust/0.1",
+  "version": 1
+}
