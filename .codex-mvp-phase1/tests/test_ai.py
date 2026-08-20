@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from pathlib import Path
 from typing import Self
 
 from research_os_mvp.ai import (
+    DEFAULT_HEALTH_TIMEOUT_SECONDS,
     AIProviderError,
+    AISettings,
     check_ollama,
     generate_research,
     load_ai_settings,
@@ -73,6 +76,145 @@ class AITests(unittest.TestCase):
             self.assertEqual(response.eval_count, 42)
             self.assertFalse(response.truncated)
             self.assertEqual(len(requests), 2)
+
+    def test_health_check_uses_its_own_timeout_not_the_generation_timeout(self) -> None:
+        settings = AISettings(
+            provider="ollama",
+            endpoint="http://127.0.0.1:11434",
+            model="qwen2.5:7b",
+            reviewer_model="qwen2.5:7b",
+            health_timeout_seconds=47,
+            timeout_seconds=300,
+        )
+        observed_timeouts: list[int] = []
+
+        def fake_open(
+            _request: object,
+            *,
+            timeout: int,
+        ) -> FakeHTTPResponse:
+            observed_timeouts.append(timeout)
+            return FakeHTTPResponse({"models": [{"name": "qwen2.5:7b"}]})
+
+        check_ollama(settings, open_fn=fake_open)
+        self.assertEqual(observed_timeouts, [47])
+        self.assertNotEqual(observed_timeouts, [settings.timeout_seconds])
+
+    def test_health_check_timeout_is_configurable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            save_ollama_settings(
+                temporary,
+                model="qwen2.5:7b",
+                health_timeout_seconds=91,
+            )
+            settings = load_ai_settings(temporary)
+            assert settings is not None
+
+            def fake_open(
+                _request: object,
+                *,
+                timeout: int,
+            ) -> FakeHTTPResponse:
+                self.assertEqual(timeout, 91)
+                return FakeHTTPResponse({"models": [{"name": "qwen2.5:7b"}]})
+
+            status = check_ollama(settings, open_fn=fake_open)
+            self.assertEqual(settings.health_timeout_seconds, 91)
+            self.assertEqual(status["health_timeout_seconds"], 91)
+            self.assertEqual(status["timeout_seconds"], 300)
+            self.assertIn("health_check_elapsed_seconds", status)
+
+    def test_legacy_settings_without_health_timeout_use_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "settings.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "research-os-mvp-settings/0.1",
+                        "ai": {
+                            "enabled": True,
+                            "provider": "ollama",
+                            "endpoint": "http://127.0.0.1:11434",
+                            "model": "qwen2.5:7b",
+                            "reviewer_model": "qwen3:1.7b",
+                            "timeout_seconds": 300,
+                            "max_response_chars": 200_000,
+                            "max_output_tokens": 1536,
+                            "automatic_research": True,
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            settings = load_ai_settings(temporary)
+            assert settings is not None
+            self.assertEqual(
+                settings.health_timeout_seconds,
+                DEFAULT_HEALTH_TIMEOUT_SECONDS,
+            )
+            self.assertEqual(settings.health_timeout_seconds, 60)
+
+    def test_health_check_error_names_the_step_and_config_key(self) -> None:
+        settings = AISettings(
+            provider="ollama",
+            endpoint="http://127.0.0.1:11434",
+            model="qwen2.5:7b",
+            reviewer_model="qwen2.5:7b",
+            health_timeout_seconds=60,
+        )
+
+        def fail_open(_request: object, **_kwargs: object) -> FakeHTTPResponse:
+            raise TimeoutError("timed out")
+
+        with self.assertRaises(AIProviderError) as raised:
+            check_ollama(settings, open_fn=fail_open)
+        message = str(raised.exception)
+        self.assertIn("健康检查", message)
+        self.assertIn("实际等待", message)
+        self.assertIn("health_timeout_seconds=60", message)
+
+    def test_generation_error_names_the_step_and_config_key(self) -> None:
+        settings = AISettings(
+            provider="ollama",
+            endpoint="http://127.0.0.1:11434",
+            model="qwen2.5:7b",
+            reviewer_model="qwen2.5:7b",
+            timeout_seconds=300,
+        )
+
+        def fail_open(_request: object, **_kwargs: object) -> FakeHTTPResponse:
+            raise TimeoutError("timed out")
+
+        with self.assertRaises(AIProviderError) as raised:
+            generate_research(settings, "测试生成错误", open_fn=fail_open)
+        message = str(raised.exception)
+        self.assertIn("生成调用", message)
+        self.assertIn("实际等待", message)
+        self.assertIn("timeout_seconds=300", message)
+
+    def test_health_and_generation_errors_are_distinguishable(self) -> None:
+        settings = AISettings(
+            provider="ollama",
+            endpoint="http://127.0.0.1:11434",
+            model="qwen2.5:7b",
+            reviewer_model="qwen2.5:7b",
+        )
+
+        def fail_open(_request: object, **_kwargs: object) -> FakeHTTPResponse:
+            raise TimeoutError("timed out")
+
+        with self.assertRaises(AIProviderError) as health_error:
+            check_ollama(settings, open_fn=fail_open)
+        with self.assertRaises(AIProviderError) as generation_error:
+            generate_research(settings, "测试错误区分", open_fn=fail_open)
+        health_message = str(health_error.exception)
+        generation_message = str(generation_error.exception)
+        self.assertNotEqual(health_message, generation_message)
+        self.assertIn("健康检查", health_message)
+        self.assertNotIn("生成调用", health_message)
+        self.assertIn("生成调用", generation_message)
+        self.assertNotIn("健康检查", generation_message)
 
     def test_remote_endpoint_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, self.assertRaisesRegex(

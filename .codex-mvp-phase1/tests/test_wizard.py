@@ -6,7 +6,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from research_os_mvp.ai import AIResponse, AISettings, save_ollama_settings
+from research_os_mvp.ai import (
+    AIProviderError,
+    AIResponse,
+    AISettings,
+    save_ollama_settings,
+)
 from research_os_mvp.errors import RunStateError
 from research_os_mvp.runtime import verify_run
 from research_os_mvp.wizard import (
@@ -752,6 +757,284 @@ class WizardTests(unittest.TestCase):
             self.assertIn("菜单 8 导入", completion)
             self.assertIn("research-os-mvp configure-ollama", completion)
             self.assertIn("第 2 步获得本地 AI 草稿", completion)
+
+    def test_retry_key_appears_only_when_ai_configured_and_no_draft(self) -> None:
+        with tempfile.TemporaryDirectory() as configured_temporary:
+            save_ollama_settings(
+                configured_temporary,
+                model="qwen2.5:7b",
+                automatic_research=False,
+            )
+            configured_answers = iter(
+                [
+                    "1",
+                    "项目验收：确认重试键显示条件",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "y",
+                    "y",
+                    "",
+                    "0",
+                ]
+            )
+            configured_prompts: list[str] = []
+
+            def configured_input(prompt: str) -> str:
+                configured_prompts.append(prompt)
+                return next(configured_answers)
+
+            run_easy_wizard(
+                workspace=configured_temporary,
+                input_fn=configured_input,
+                output_fn=lambda _line: None,
+            )
+            configured_review = next(
+                prompt for prompt in configured_prompts if "F 导入资料" in prompt
+            )
+            self.assertIn("A 重试 AI", configured_review)
+
+        with tempfile.TemporaryDirectory() as unconfigured_temporary:
+            unconfigured_answers = iter(
+                [
+                    "1",
+                    "项目验收：确认未配置时不显示重试键",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "y",
+                    "y",
+                    "",
+                    "0",
+                ]
+            )
+            unconfigured_prompts: list[str] = []
+
+            def unconfigured_input(prompt: str) -> str:
+                unconfigured_prompts.append(prompt)
+                return next(unconfigured_answers)
+
+            run_easy_wizard(
+                workspace=unconfigured_temporary,
+                input_fn=unconfigured_input,
+                output_fn=lambda _line: None,
+            )
+            unconfigured_review = next(
+                prompt for prompt in unconfigured_prompts if "F 导入资料" in prompt
+            )
+            self.assertNotIn("A 重试 AI", unconfigured_review)
+
+        with tempfile.TemporaryDirectory() as draft_temporary:
+            save_ollama_settings(draft_temporary, model="qwen2.5:7b")
+            draft_answers = iter(
+                [
+                    "1",
+                    "项目验收：确认已有草稿时不显示重试键",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "y",
+                    "y",
+                    "",
+                    "0",
+                ]
+            )
+            draft_prompts: list[str] = []
+
+            def draft_input(prompt: str) -> str:
+                draft_prompts.append(prompt)
+                return next(draft_answers)
+
+            run_easy_wizard(
+                workspace=draft_temporary,
+                input_fn=draft_input,
+                output_fn=lambda _line: None,
+                ai_generate_fn=self._fake_ai_generate,
+            )
+            draft_review = next(
+                prompt for prompt in draft_prompts if "F 导入资料" in prompt
+            )
+            self.assertNotIn("A 重试 AI", draft_review)
+
+    def test_retry_key_triggers_a_new_ai_attempt(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            save_ollama_settings(temporary, model="qwen2.5:7b")
+            answers = iter(
+                [
+                    "1",
+                    "项目验收：确认显式 AI 重试",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "y",
+                    "y",
+                    "a",
+                    "",
+                    "0",
+                ]
+            )
+            attempts: list[str] = []
+
+            def fail_then_succeed(settings: AISettings, prompt: str) -> AIResponse:
+                attempts.append(prompt)
+                if len(attempts) == 1:
+                    raise AIProviderError("模拟首次调用失败")
+                return self._fake_ai_generate(settings, prompt)
+
+            output: list[str] = []
+            run_easy_wizard(
+                workspace=temporary,
+                input_fn=lambda _prompt: next(answers),
+                output_fn=output.append,
+                ai_generate_fn=fail_then_succeed,
+            )
+            self.assertEqual(len(attempts), 2)
+            rendered = "\n".join(output)
+            self.assertIn("正在重试本地 AI", rendered)
+            self.assertIn("本地 AI 初稿已写入 Evidence", rendered)
+
+    def test_automatic_retry_loop_is_still_prevented(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            save_ollama_settings(temporary, model="qwen2.5:7b")
+            answers = iter(
+                [
+                    "1",
+                    "项目验收：确认自动失败不会循环重试",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "y",
+                    "y",
+                    "v",
+                    "",
+                    "0",
+                ]
+            )
+            attempts: list[str] = []
+
+            def always_fail(_settings: AISettings, prompt: str) -> AIResponse:
+                attempts.append(prompt)
+                raise AIProviderError("模拟持续失败")
+
+            run_easy_wizard(
+                workspace=temporary,
+                input_fn=lambda _prompt: next(answers),
+                output_fn=lambda _line: None,
+                ai_generate_fn=always_fail,
+            )
+            self.assertEqual(len(attempts), 1)
+
+    def test_audit_key_explains_why_no_draft_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            save_ollama_settings(
+                temporary,
+                model="qwen2.5:7b",
+                automatic_research=False,
+            )
+            answers = iter(
+                [
+                    "1",
+                    "项目验收：确认无草稿审计引导",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "y",
+                    "y",
+                    "v",
+                    "",
+                    "0",
+                ]
+            )
+            output: list[str] = []
+            run_easy_wizard(
+                workspace=temporary,
+                input_fn=lambda _prompt: next(answers),
+                output_fn=output.append,
+            )
+            rendered = "\n".join(output)
+            self.assertIn("尚未调用或尚未生成草稿", rendered)
+            self.assertIn("按 A 重试生成", rendered)
+            self.assertIn("按 F 导入资料", rendered)
+            self.assertIn("按 Y 直接批准通用模板", rendered)
+
+    def test_audit_key_message_mentions_prior_ai_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            save_ollama_settings(temporary, model="qwen2.5:7b")
+            answers = iter(
+                [
+                    "1",
+                    "项目验收：确认审计提示识别调用失败",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "y",
+                    "y",
+                    "v",
+                    "",
+                    "0",
+                ]
+            )
+
+            def fail_ai(_settings: AISettings, _prompt: str) -> AIResponse:
+                raise AIProviderError("模拟 AI 调用失败")
+
+            output: list[str] = []
+            run_easy_wizard(
+                workspace=temporary,
+                input_fn=lambda _prompt: next(answers),
+                output_fn=output.append,
+                ai_generate_fn=fail_ai,
+            )
+            rendered = "\n".join(output)
+            self.assertIn("此前本地 AI 调用已失败", rendered)
+            self.assertIn("按 A 重试生成", rendered)
+
+    def test_existing_run_verify_unchanged_after_ux02(self) -> None:
+        runs_root = Path(__file__).resolve().parents[1] / "workspace" / "runs"
+        expected = {
+            "run-20260820t062550z-969cbc95": (
+                "6447a0f78ef68a7775b624c4189d6306b958a3abcf906191a199be35fe497a3a",
+                {
+                    "evidence/EVID-01-task-local-01-capture-goal.json": "047a70c456410ae1187b4c3dada3cf1a91288cc4a14585ceba089b300b292712",
+                    "evidence/EVID-02-task-local-02-record-evaluation-frame.json": "092d397326fcfcabf93751a09d5732fdd4cf4940ff4897ca33a7957d44aaf1aa",
+                },
+            ),
+            "run-20260820t071348z-65b76017": (
+                "c1fa6b16207df8e3c0997740ba15b5d942d90a07a64e48735ccc231153f126da",
+                {
+                    "evidence/EVID-01-task-local-01-capture-goal.json": "ac8ce03f2d912b10bbb93fa1eb4991e4798ae7963eb6c57efa6612f67d4c5712",
+                    "evidence/EVID-02-task-local-02-record-evaluation-frame.json": "de215c408d6e642f72d0fa72c1873c178dd35f9aca7423a0f7cd08fdf372f7aa",
+                },
+            ),
+        }
+        for run_id, (review_hash, evidence_hashes) in expected.items():
+            with self.subTest(run_id=run_id):
+                run_dir = runs_root / run_id
+                status = verify_run(run_dir)
+                self.assertEqual(status["integrity"], "verified")
+                self.assertEqual(status["status"], "completed")
+                self.assertEqual(status["checkpoint"], "current")
+                self.assertEqual(status["event_count"], 23)
+                self.assertEqual(status["evidence_count"], 2)
+                self.assertEqual(status["report_count"], 4)
+                self.assertEqual(status["hashed_file_count"], 11)
+                self.assertEqual(status["latest_review_hash"], review_hash)
+                manifest = json.loads(
+                    (run_dir / "HASHES.json").read_text(encoding="utf-8")
+                )
+                actual_evidence_hashes = {
+                    item["path"]: item["sha256"]
+                    for item in manifest["files"]
+                    if item["path"].startswith("evidence/")
+                }
+                self.assertEqual(actual_evidence_hashes, evidence_hashes)
 
     def test_existing_run_verify_unchanged_after_ux01(self) -> None:
         run_dir = (

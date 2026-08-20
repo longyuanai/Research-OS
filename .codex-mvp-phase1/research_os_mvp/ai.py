@@ -17,6 +17,7 @@ from research_os_mvp.integrity import read_json, write_json_atomic
 SETTINGS_FILE = "settings.json"
 SETTINGS_SCHEMA = "research-os-mvp-settings/0.1"
 DEFAULT_ENDPOINT = "http://127.0.0.1:11434"
+DEFAULT_HEALTH_TIMEOUT_SECONDS = 60
 MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$")
 LOCAL_RESEARCH_SYSTEM_PROMPT = (
@@ -39,6 +40,7 @@ class AISettings:
     endpoint: str
     model: str
     reviewer_model: str
+    health_timeout_seconds: int = DEFAULT_HEALTH_TIMEOUT_SECONDS
     timeout_seconds: int = 300
     max_response_chars: int = 200_000
     max_output_tokens: int = 1536
@@ -99,10 +101,16 @@ def _settings_from_data(value: Any) -> AISettings:
     reviewer_model = ai.get("reviewer_model", model)
     if not isinstance(reviewer_model, str) or not MODEL_PATTERN.fullmatch(reviewer_model):
         raise AIProviderError("Ollama 审计模型名称格式不正确")
+    health_timeout = ai.get(
+        "health_timeout_seconds",
+        DEFAULT_HEALTH_TIMEOUT_SECONDS,
+    )
     timeout = ai.get("timeout_seconds", 300)
     maximum = ai.get("max_response_chars", 200_000)
     max_output_tokens = ai.get("max_output_tokens", 1536)
     automatic = ai.get("automatic_research", True)
+    if not isinstance(health_timeout, int) or not 1 <= health_timeout <= 300:
+        raise AIProviderError("Ollama 健康检查超时必须在 1-300 秒之间")
     if not isinstance(timeout, int) or not 10 <= timeout <= 900:
         raise AIProviderError("AI 超时必须在 10-900 秒之间")
     if not isinstance(maximum, int) or not 1_000 <= maximum <= 500_000:
@@ -116,6 +124,7 @@ def _settings_from_data(value: Any) -> AISettings:
         endpoint=_validate_local_endpoint(str(ai.get("endpoint", DEFAULT_ENDPOINT))),
         model=model,
         reviewer_model=reviewer_model,
+        health_timeout_seconds=health_timeout,
         timeout_seconds=timeout,
         max_response_chars=maximum,
         max_output_tokens=max_output_tokens,
@@ -138,6 +147,7 @@ def save_ollama_settings(
     model: str,
     reviewer_model: str | None = None,
     endpoint: str = DEFAULT_ENDPOINT,
+    health_timeout_seconds: int = DEFAULT_HEALTH_TIMEOUT_SECONDS,
     max_output_tokens: int = 1536,
     automatic_research: bool = True,
 ) -> Path:
@@ -152,6 +162,7 @@ def save_ollama_settings(
             "endpoint": endpoint,
             "model": model,
             "reviewer_model": reviewer_model or model,
+            "health_timeout_seconds": health_timeout_seconds,
             "timeout_seconds": 300,
             "max_response_chars": 200_000,
             "max_output_tokens": max_output_tokens,
@@ -192,11 +203,18 @@ def check_ollama(settings: AISettings, *, open_fn: OpenFn = urllib.request.urlop
         headers={"Accept": "application/json"},
         method="GET",
     )
+    started = time.monotonic()
     try:
-        with open_fn(request, timeout=min(settings.timeout_seconds, 15)) as response:
+        with open_fn(request, timeout=settings.health_timeout_seconds) as response:
             value = _read_json_response(response)
     except (OSError, urllib.error.URLError, urllib.error.HTTPError) as exc:
-        raise AIProviderError(f"Ollama 本地服务连接失败：{exc}") from exc
+        elapsed = time.monotonic() - started
+        raise AIProviderError(
+            "Ollama 健康检查失败：无法连接本地服务"
+            f"（实际等待 {elapsed:.3f} 秒；"
+            f"health_timeout_seconds={settings.health_timeout_seconds} 秒）；"
+            f"请确认服务已启动，或调高 health_timeout_seconds。原始错误：{exc}"
+        ) from exc
     models = value.get("models")
     if not isinstance(models, list):
         raise AIProviderError("Ollama 模型列表格式不正确")
@@ -204,6 +222,9 @@ def check_ollama(settings: AISettings, *, open_fn: OpenFn = urllib.request.urlop
     return {
         "provider": settings.provider,
         "endpoint": settings.endpoint,
+        "health_timeout_seconds": settings.health_timeout_seconds,
+        "health_check_elapsed_seconds": round(time.monotonic() - started, 3),
+        "timeout_seconds": settings.timeout_seconds,
         "model": settings.model,
         "model_available": settings.model in names,
         "reviewer_model": settings.reviewer_model,
@@ -254,7 +275,12 @@ def generate_research(
         detail = exc.read(4096).decode("utf-8", errors="replace")
         raise AIProviderError(f"Ollama 请求失败（HTTP {exc.code}）：{detail}") from exc
     except (OSError, urllib.error.URLError) as exc:
-        raise AIProviderError(f"Ollama 本地服务连接失败：{exc}") from exc
+        elapsed = time.monotonic() - started
+        raise AIProviderError(
+            "Ollama AI 生成调用失败"
+            f"（实际等待 {elapsed:.3f} 秒；timeout_seconds={settings.timeout_seconds} 秒）；"
+            f"可调高 timeout_seconds 或改用更小模型。原始错误：{exc}"
+        ) from exc
     message = value.get("message")
     content = message.get("content") if isinstance(message, dict) else None
     if not isinstance(content, str) or not content.strip():

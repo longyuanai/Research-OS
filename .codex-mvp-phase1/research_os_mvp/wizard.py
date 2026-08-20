@@ -363,6 +363,18 @@ def _local_ai_template_warning(settings: AISettings | None) -> str:
     )
 
 
+def _missing_ai_draft_guidance(*, prior_failure: bool) -> str:
+    reason = (
+        "此前本地 AI 调用已失败，所以没有生成草稿"
+        if prior_failure
+        else "本地 AI 尚未调用或尚未生成草稿"
+    )
+    return (
+        f"当前没有可审计的本地 AI 草稿：{reason}。"
+        "现在可按 A 重试生成、按 F 导入资料，或按 Y 直接批准通用模板。"
+    )
+
+
 def render_easy_review(run_dir: Path | str) -> str:
     path = Path(run_dir)
     status = verify_run(path)
@@ -616,7 +628,10 @@ def _audit_ai_research(
         "TASK-LOCAL-02-record-evaluation-frame",
     )
     if not drafts:
-        raise RunStateError("当前还没有可审计的本地 AI 草稿")
+        raise RunStateError(
+            "当前没有可审计的本地 AI 草稿；本地 AI 可能尚未调用或调用失败。"
+            "请先重试生成，也可导入资料后继续，或直接批准通用模板。"
+        )
     latest = drafts[-1]
     sources = _source_evidence_for_task(
         run_dir,
@@ -739,7 +754,9 @@ def _easy_approval_loop(
     rejects = {"x", "reject", "rejected", "驳回", "拒绝"}
     imports = {"f", "file", "文件", "导入"}
     audits = {"v", "verify", "audit", "复核", "审计"}
+    ai_retries = {"a", "ai", "重试"}
     automatic_attempted = False
+    ai_attempt_failed = False
     template_warning_shown = False
     while True:
         status = verify_run(run_dir)
@@ -786,9 +803,12 @@ def _easy_approval_loop(
             output_fn(f"正在调用本地 AI（{settings.model}），请稍候……")
             try:
                 imported = _automatic_ai_research(run_dir, settings, ai_generate_fn)
+                ai_attempt_failed = False
                 output_fn(f"本地 AI 初稿已写入 Evidence：{imported['id']}")
             except MVPError as exc:
+                ai_attempt_failed = True
                 output_fn(f"本地 AI 调用未完成：{exc}")
+                output_fn(_missing_ai_draft_guidance(prior_failure=True))
         if (
             not template_warning_shown
             and status["pending_task_id"] == "TASK-LOCAL-02-record-evaluation-frame"
@@ -797,10 +817,19 @@ def _easy_approval_loop(
             output_fn(_local_ai_template_warning(settings))
             template_warning_shown = True
         output_fn(render_easy_review(run_dir))
-        if status["pending_task_id"] == "TASK-LOCAL-02-record-evaluation-frame":
+        task_two_pending = (
+            status["pending_task_id"] == "TASK-LOCAL-02-record-evaluation-frame"
+        )
+        retry_available = (
+            task_two_pending
+            and settings is not None
+            and not _ai_evidence_for_task(run_dir, status["pending_task_id"])
+        )
+        if task_two_pending:
+            retry_option = "A 重试 AI；" if retry_available else ""
             prompt = (
                 "Reviewer 决定：Y Approved；R Changes Requested；"
-                "X Rejected；F 导入资料；V AI 审计；回车暂停："
+                f"X Rejected；F 导入资料；V AI 审计；{retry_option}回车暂停："
             )
         else:
             prompt = (
@@ -812,6 +841,20 @@ def _easy_approval_loop(
         if not answer or answer in pauses:
             output_fn("任务已保存。下次双击“双击这里开始.cmd”可继续。")
             return
+        if answer in ai_retries:
+            if not retry_available or settings is None:
+                output_fn("A 重试仅在第 2 步已配置本地 AI 且尚无 AI 草稿时使用。")
+                continue
+            output_fn(f"正在重试本地 AI（{settings.model}），请稍候……")
+            try:
+                imported = _automatic_ai_research(run_dir, settings, ai_generate_fn)
+                ai_attempt_failed = False
+                output_fn(f"本地 AI 初稿已写入 Evidence：{imported['id']}")
+            except MVPError as exc:
+                ai_attempt_failed = True
+                output_fn(f"本地 AI 重试未完成：{exc}")
+                output_fn(_missing_ai_draft_guidance(prior_failure=True))
+            continue
         if answer in reworks:
             feedback = input_fn("请记录 Changes Requested 的具体修改要求：")
             if not feedback.strip():
@@ -891,7 +934,15 @@ def _easy_approval_loop(
                 output_fn("V 审计在第 2 步使用。")
                 continue
             if settings is None:
-                output_fn("本地 AI 尚未配置；可先使用菜单 5 导出研究指令。")
+                output_fn(
+                    "本地 AI 尚未配置，因此没有可审计草稿；"
+                    "可按 F 导入资料、按 Y 批准通用模板，或使用菜单 5 导出研究指令。"
+                )
+                continue
+            if not _ai_evidence_for_task(run_dir, status["pending_task_id"]):
+                output_fn(
+                    _missing_ai_draft_guidance(prior_failure=ai_attempt_failed)
+                )
                 continue
             output_fn(f"正在调用审计模型（{settings.reviewer_model}），请稍候……")
             try:
@@ -901,8 +952,11 @@ def _easy_approval_loop(
                 output_fn(f"AI 审计未完成：{exc}")
             continue
         if answer not in approvals:
+            accepted = "Y、R、X、F、V、N"
+            if retry_available:
+                accepted += "、A"
             output_fn(
-                "这里仅接收 Y、R、X、F、V、N 或直接回车；"
+                f"这里仅接收 {accepted} 或直接回车；"
                 "刚才的文字没有写入任务。"
             )
             if _looks_like_external_ai_instruction(entered):

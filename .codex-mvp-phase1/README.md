@@ -83,8 +83,9 @@ $MvpPython = '$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\depen
 4. 检查汇总内容，输入 `Y` 确认创建，或输入 `R` 重新填写。
 5. 查看第 1 步结果；输入 `Y` 记录 `Approved`，`R` 记录
    `Changes Requested`，`X` 记录 `Rejected`。
-6. 系统进入第 2 步后自动调用本地 AI；`R` 会先封存 Reviewer 意见，
-   再让 AI 返工并将新 Evidence 链回该决定。
+6. 系统进入第 2 步后自动调用本地 AI；调用失败且尚无草稿时可按 `A` 显式重试，
+   系统不会自动循环重试。`R` 会先封存 Reviewer 意见，再让 AI 返工并将新 Evidence
+   链回该决定。
 7. 第 3 次批准后，系统自动完成、检查记录并生成 AI 研究指令。
 
 中途直接回车或关闭窗口，任务仍保存在 `workspace`。下次双击后输入 `2`，
@@ -95,7 +96,9 @@ Windows `py` 和系统 `python`，无需手动填写 Python 路径。
 `workspace/handoffs/`，文件名含指令内容 Hash，修订前后版本可并存。当前三步流程完成代表“研究范围和证据结构已经建立”，
 不代表候选方案已经完成真实比较；报告会明确显示决策就绪度。
 
-Reviewer 提示接收 `Y`、`R`、`X`、`N` 或空行。对第 2 步选 `R`
+Reviewer 提示接收 `Y`、`R`、`X`、`N` 或空行；第 2 步还支持 `F` 导入、`V` 审计，
+以及在本地 AI 已配置且尚无草稿时显示的 `A` 重试。无草稿时按 `V` 会说明是尚未调用
+还是本次调用已经失败，并提示重试、导入或直接批准。对第 2 步选 `R`
 会自动触发 AI 返工；其他步骤会继续询问完整修订内容，也可输入
 `@UTF-8文件路径` 导入。直接回车则只保存 Reviewer 决定并继续暂停。
 误输入要求、文件路径或“执行 Research-OS”
@@ -236,7 +239,7 @@ python -m research_os_mvp effective-outputs <run-dir>
 python -m research_os_mvp verify-effective-manifest <manifest.json>
 python -m research_os_mvp sign-effective-manifest <manifest.json> --identity <id> --key <private-key> --public-key <public-key> --output <attestation.json>
 python -m research_os_mvp verify-effective-manifest-signature <manifest.json> <attestation.json>
-python -m research_os_mvp configure-ollama --workspace <dir> --model qwen2.5:7b [--review-model qwen2.5:7b] [--max-output-tokens 1536]
+python -m research_os_mvp configure-ollama --workspace <dir> --model qwen2.5:7b [--review-model qwen2.5:7b] [--health-timeout-seconds 60] [--max-output-tokens 1536]
 python -m research_os_mvp ollama-status --workspace <dir>
 python -m research_os_mvp benchmark-ollama --workspace <dir> --model qwen3:1.7b --model qwen2.5:3b-instruct-q4_K_M --model qwen2.5:7b [--output <report.json>]
 python -m research_os_mvp export-obsidian <run-dir> <vault-dir>
@@ -537,6 +540,18 @@ Claim 评估分支，其 effective outputs、`manifest_sha256` 与既有 detache
 研究，以及研究结果的导入入口。没有修改 Evidence、Report、Pack 的持久化内容或哈希，
 也没有改变 Task 状态机、Reviewer 决定、Claims gate、Reviewer trust 或 effective output
 行为。
+
+## UX-02：本地 AI 调用链修复（2026-08-20）
+
+Ollama 健康检查使用独立的 `health_timeout_seconds`，默认 60 秒；这比默认 300 秒的
+生成超时短，避免服务不可用时让界面等待五分钟，同时给本机服务和模型冷启动留出余量。
+旧 `settings.json` 缺少该字段时自动使用默认值。`configure-ollama` 可通过
+`--health-timeout-seconds` 设置，`ollama-status` 会显示配置值、健康检查实际耗时和独立
+的生成超时。健康检查与生成调用错误分别报告步骤、实际等待时间和对应配置键。
+
+第 2 步的自动调用仍只尝试一次，防止失败循环；只有本地 AI 已配置且当前尚无草稿时，
+Reviewer 提示才显示 `A 重试 AI`。这是用户显式重试，不改变 `Y/R/X/回车` 的 Reviewer
+决定语义，也不修改 Evidence、Report、Pack 或 Run 状态机。
 
 ## 测试
 

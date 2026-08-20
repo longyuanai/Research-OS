@@ -6,7 +6,12 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from research_os_mvp.ai import check_ollama, load_ai_settings, save_ollama_settings
+from research_os_mvp.ai import (
+    DEFAULT_HEALTH_TIMEOUT_SECONDS,
+    check_ollama,
+    load_ai_settings,
+    save_ollama_settings,
+)
 from research_os_mvp.benchmark import (
     benchmark_console_summary,
     default_benchmark_path,
@@ -326,6 +331,12 @@ def build_parser() -> argparse.ArgumentParser:
     configure_ai_parser.add_argument("--model", default="qwen2.5:7b")
     configure_ai_parser.add_argument("--review-model")
     configure_ai_parser.add_argument("--endpoint", default="http://127.0.0.1:11434")
+    configure_ai_parser.add_argument(
+        "--health-timeout-seconds",
+        type=int,
+        default=DEFAULT_HEALTH_TIMEOUT_SECONDS,
+        help="Ollama health-check timeout; generation keeps its separate timeout",
+    )
     configure_ai_parser.add_argument("--max-output-tokens", type=int, default=1536)
     configure_ai_parser.add_argument(
         "--manual",
@@ -678,6 +689,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 model=args.model,
                 reviewer_model=args.review_model,
                 endpoint=args.endpoint,
+                health_timeout_seconds=args.health_timeout_seconds,
                 max_output_tokens=args.max_output_tokens,
                 automatic_research=not args.manual,
             )

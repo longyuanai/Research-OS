@@ -7,7 +7,9 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
+from research_os_mvp.ai import AISettings, load_ai_settings
 from research_os_mvp.cli import main
 from research_os_mvp.runtime import (
     EFFECTIVE_OUTPUT_MANIFEST_SCHEMA,
@@ -19,6 +21,42 @@ from tests.helpers import EXAMPLE_PACK, write_pack
 
 
 class CLITests(unittest.TestCase):
+    @patch("research_os_mvp.cli.check_ollama")
+    def test_configure_ollama_accepts_and_reports_health_timeout(
+        self,
+        check_mock: Mock,
+    ) -> None:
+        def fake_check(settings: AISettings) -> dict[str, object]:
+            return {
+                "provider": settings.provider,
+                "health_timeout_seconds": settings.health_timeout_seconds,
+                "health_check_elapsed_seconds": 0.25,
+                "timeout_seconds": settings.timeout_seconds,
+            }
+
+        check_mock.side_effect = fake_check
+        with tempfile.TemporaryDirectory() as temporary:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                exit_code = main(
+                    [
+                        "configure-ollama",
+                        "--workspace",
+                        temporary,
+                        "--model",
+                        "qwen2.5:7b",
+                        "--health-timeout-seconds",
+                        "88",
+                    ]
+                )
+            self.assertEqual(exit_code, 0)
+            settings = load_ai_settings(temporary)
+            assert settings is not None
+            self.assertEqual(settings.health_timeout_seconds, 88)
+            result = json.loads(output.getvalue())
+            self.assertEqual(result["health_timeout_seconds"], 88)
+            self.assertEqual(result["timeout_seconds"], 300)
+
     def test_effective_outputs_command_returns_stable_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
