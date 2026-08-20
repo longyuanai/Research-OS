@@ -1,13 +1,14 @@
 # Research-OS — Validation Cycle 04 — Minimal Implementation Activation
 
 **Status:** Draft
-**Version:** 0.1.0-draft
+**Version:** 0.2.0-draft
 **Foundation Version:** 1.0.0-rc.1
 **Path:** `VALIDATION/04-Validation-Report/REPORT-VALIDATION-04.md`
 **Supersedes:** none
 **Related:** [FRFC-0003 Draft](../../FOUNDATION/08-RFCs/FRFC-0003-activate-platform-implementation-profile.md),
 [FRFC-0003 self-Audit F-01](../../FOUNDATION/04-Audits/AUDIT-FRFC-0003-activate-platform-implementation-profile.md#f-01--validation-step-1-evidence-is-not-yet-accepted),
-[Validation 04 Audit](../05-Validation-Audit/AUDIT-VALIDATION-04.md),
+[Validation 04 Builder Self-Audit](../05-Validation-Audit/AUDIT-VALIDATION-04.md),
+[Validation 04 Independent Audit](../05-Validation-Audit/AUDIT-VALIDATION-04-independent-audit.md),
 [Validation 04 Review](../06-Validation-Review/REVIEW-VALIDATION-04.md),
 [Directory Standard](../../FOUNDATION/03-Standards/directory-standard.md),
 [Runtime Specification](../../FOUNDATION/03-Standards/runtime-specification.md),
@@ -17,10 +18,15 @@
 [FD-0003](../../FOUNDATION/09-Decisions/FD-0003-approve-foundation-baseline.md),
 [FD-0004](../../FOUNDATION/09-Decisions/FD-0004-authorize-foundation-rc-1.md),
 [Implementation Plan](../../IMPLEMENTATION-PLAN.md)
+**ID:** EVID-FOUNDATION-0004-minimal-implementation-activation
+**Collected-At:** 2026-08-05T19:05:23+08:00
+**Collected-By:** Research-OS Validation Builder (Builder role)
+**Source:** Research-OS repository tree and governance artifacts at audited commit `77b9ec6`
+**Method:** Read-only document trace, repository-tree inspection, alternative comparison, and cross-reference validation
 **Constitution Version:** 0.1.0-draft (Ratified by FD-0001, 2026-08-03)
 **Validation Cycle:** 04 (Triggered Validation Cycle — Implementation-triggered)
 **Validator:** Research-OS Validation Builder (Builder role; read-only analysis)
-**Report Date:** 2026-08-05
+**Report Date:** 2026-08-07
 **Trigger:** A Builder adversarial self-audit of the Draft FRFC-0003 proposal found
 that Validation Cycle 01 did not determine whether the implementation gap requires
 claiming only `11-Runtime` or naming all reserved prefixes `11`–`15`.
@@ -31,6 +37,65 @@ claiming only `11-Runtime` or naming all reserved prefixes `11`–`15`.
 > artifacts. It records evidence and a provisional recommendation only. It does not
 > approve or submit FRFC-0003, create or ratify an FD, patch a Standard, claim a path,
 > add an ADR or dependency, create a Builder Pack, activate APES, or write Runtime code.
+
+## §1 Purpose
+
+This Evidence record captures the Foundation implementation gap, the minimum offline
+validation capability justified by the current repository, and the unresolved
+governance classification of its future storage path.
+
+## §2 Observation
+
+- The Foundation defines Pack and Runtime contracts, but the audited repository has no
+  concrete Runtime, Engine, SDK, Plugin, or standalone validator implementation.
+- Validation Cycle 01 establishes that implementation is missing, but does not select a
+  concrete path or decide between one-path and multi-path activation.
+- Runtime Specification responsibilities make `FOUNDATION/11-Runtime/` a leading
+  candidate only if validation remains intrinsic to the Runtime rather than an invoked
+  standalone validator module.
+- The current evidence does not exclude a future Quality-Gate implementation boundary
+  or deferral of exact path assignment until the post-RC governed-work-unit mechanism
+  and Human Architect classification are available.
+- No present evidence requires claiming prefixes `12`–`15`, creating implementation
+  artifacts, or changing any Foundation normative artifact in this cycle.
+
+## §3 Conditions
+
+- **Trigger:** Implementation-triggered Validation under Change-Control Policy §9.
+- **Audited baseline:** commit `77b9ec6`, Foundation `1.0.0-rc.1`.
+- **Storage form:** the `EVID-FOUNDATION-0004-*` record is embedded in this
+  workflow-declared Builder Report path, consistent with Evidence Schema §4.1 allowing
+  Evidence storage in Builder report appendices; the container file is not renamed.
+- **Declared write scope:** the three Validation 04 records listed in §2.2 below;
+  Foundation normative artifacts and implementation files remain forbidden.
+- **Inputs:** the Directory, Runtime, Pack, Quality Gate, Change-Control, RFC, and
+  historical Validation records enumerated in §2.4 below.
+- **Observation mode:** read-only governance and repository analysis; no implementation,
+  execution, network access, or external publication.
+
+## §4 Limitations
+
+- This record evaluates governance fit and evidence sufficiency; it does not validate a
+  concrete implementation, benchmark, serialization format, CLI, or dependency set.
+- The original observation time was not separately logged. `Collected-At` uses the
+  earliest Git commit timestamp containing this Evidence record (`1a435d3`) and is
+  therefore a repository-derived provenance timestamp.
+- `FOUNDATION/11-Runtime/` is a candidate path, not an accepted or exclusive assignment.
+  A future Quality-Gate boundary and deferral remain live alternatives.
+- No conclusion in this record substitutes for an independent Audit, Human Review,
+  Human Architect acceptance, FRFC approval, FD ratification, or implementation work
+  authorization.
+
+## §5 References
+
+- [Change-Control Policy §8.2–§8.3](../../FOUNDATION/02-Governance/change-control-policy.md#82-step-records)
+- [Evidence Schema §4](../../FOUNDATION/03-Standards/schema-standard.md#4-evidence-schema)
+- [Runtime Specification](../../FOUNDATION/03-Standards/runtime-specification.md)
+- [Quality Gate Standard](../../FOUNDATION/03-Standards/quality-gate-standard.md)
+- [Validation Cycle 01 Report](REPORT-VALIDATION-01.md)
+- [Validation 04 Independent Audit](../05-Validation-Audit/AUDIT-VALIDATION-04-independent-audit.md)
+
+The detailed validation analysis below remains part of this Evidence record.
 
 ## 1. Executive Summary
 
@@ -46,18 +111,23 @@ new top-level Foundation path to be named in the Standard and the Foundation REA
 before artifacts may be placed there. Therefore the first implementation requires a
 Foundation-level additive directory decision.
 
-The same evidence does **not** establish an immediate need for concrete SDK, Plugin,
-Workspace, or executable Quality Gate directories. Naming `12-SDKs` through
-`15-Quality-Gates` now would create unused architectural surface and exceed the
-validated implementation need.
+The same evidence does **not** establish an immediate need to claim concrete SDK,
+Plugin, Workspace, or Quality Gate directories. Naming prefixes `12`–`15` now would
+create unused architectural surface and exceed the validated implementation need.
+Leaving those prefixes unclaimed does not exclude a future Quality-Gate boundary from
+the path-classification analysis.
 
-**Provisional recommendation:** use a narrowed FRFC-0003 to claim only
-`FOUNDATION/11-Runtime/`; leave prefixes `12`–`15` in their current generic reserved
-state. The Directory Standard change is a backward-compatible **Minor** change to that
-artifact, not a Constitution amendment. Technology choices remain in a later F-ADR.
-This recommendation is not accepted Step-1 evidence until an independent Validation
-Audit returns `PASS` or `PASS with Notes`, a Human Reviewer records `Approved` or
-`Approved with Notes`, and a distinct Human Architect accepts the cycle for FCP Step 1.
+**Candidate path assignment:** `FOUNDATION/11-Runtime/` is the leading candidate if the
+offline validation capability is implemented as the Runtime's intrinsic
+schema-conformance boundary. It is not proven to be the only valid assignment. A
+future Quality-Gate boundary and deferral of exact path assignment remain alternatives
+for FRFC review and Human Architect classification. If `11-Runtime` is selected, the
+Directory Standard change is provisionally a backward-compatible **Minor** change to
+that artifact, not a Constitution amendment. Technology choices remain in a later
+F-ADR. This recommendation is not accepted Step-1 evidence until a follow-up
+independent Validation Audit returns `PASS` or `PASS with Notes`, a distinct Human
+Reviewer records `Approved` or `Approved with Notes`, and a separate Human Architect
+accepts the cycle for FCP Step 1.
 
 ## 2. Trigger and Scope Declaration
 
@@ -157,27 +227,48 @@ by this Validation cycle.
 ### Q3. Which reserved Foundation path is required for that slice?
 
 Directory Standard §5.1 reserves prefix `11-` for future Builder Runtime / Engines.
-The Validator belongs to that implementation boundary: it is the read/validate/compile
-front edge of the Builder Runtime and can include its fixtures and tests under the same
-authorized tree.
+The read/validate/compile capability aligns with the Runtime's Input Loader, Scope
+Validator, and Dependency Resolver responsibilities, which makes `11-Runtime` the
+leading candidate.
+
+That support is conditional. Runtime Specification §10.2.14 says the Runtime does not
+invoke a validator module because validation is intrinsic to its schema-conformance
+check. An offline Pack Validator placed under `11-Runtime` must therefore be mapped as
+an intrinsic Runtime slice, not introduced as an independent module that the Runtime
+invokes. Quality Gate Standard §1 separately defines the contract a human or
+machine-assisted validator must satisfy, so a future Quality-Gate implementation
+boundary cannot be excluded without an explicit classification decision.
+
+Three live classifications remain:
+
+1. `FOUNDATION/11-Runtime/` — leading candidate if the capability is intrinsic Runtime
+   conformance behavior;
+2. a future Quality-Gate path — possible only after its exact path and product boundary
+   are separately governed; and
+3. defer exact path assignment until the post-RC governed-work-unit mechanism and Human
+   Architect classification exist.
 
 Placing it under `10-ADRs`, `03-Standards`, a new root `src/`, or a Project tree would
 violate the declared storage purpose or introduce a different unapproved layout.
 
-**Finding:** only `FOUNDATION/11-Runtime/` is required for Phase 1.
+**Finding:** `FOUNDATION/11-Runtime/` is the leading candidate, but current evidence
+does not prove an exclusive path assignment. Exact classification remains a later
+FRFC, Review, and Human Architect decision.
 
 ### Q4. Are exact names for prefixes 12–15 required now?
 
 No. The first slice has no SDK distribution, Plugin execution, Workspace provisioning,
-or independent executable Quality Gate product. Tests and fixtures needed by the Pack
-Validator can remain under its authorized Runtime tree. The Directory Standard already
-preserves prefixes 12–15 for future use without requiring their exact names today.
+or presently classified independent Quality Gate product. If `11-Runtime` is selected,
+tests and fixtures can remain under that governed tree. The Directory Standard already
+preserves prefixes 12–15 for future use without requiring exact names today.
 
 Claiming all four names would not unlock any acceptance criterion for the offline
 Validator. It would instead make unused component boundaries appear approved and raise
-the risk of placeholder or framework-first expansion.
+the risk of placeholder or framework-first expansion. Keeping prefix `15-` unclaimed
+does not decide whether a future Quality-Gate implementation belongs there.
 
-**Finding:** prefixes 12–15 must remain unchanged and unclaimed in this cycle.
+**Finding:** prefixes 12–15 remain unchanged and unclaimed in this cycle; their future
+classification is not decided here.
 
 ### Q5. Can `11-Runtime` be created under the existing Standard without a Foundation
 change?
@@ -236,22 +327,27 @@ in the FRFC's normative Standard text.
 
 ### Q8. Is FRFC-0003 recommended?
 
-Yes, but only after narrowing it to the validated need and only after this Validation
-cycle is human-reviewed. The FRFC should:
+Yes, but only as a narrowed Draft that presents the unresolved classification for
+independent review after this corrected Validation cycle passes its gates. The FRFC
+should:
 
-1. claim only `FOUNDATION/11-Runtime/`;
+1. present `FOUNDATION/11-Runtime/` as the leading candidate and compare it with a
+   future Quality-Gate boundary and deferral of exact path assignment;
 2. provide the exact Directory Standard, README, header, version, and CHANGELOG patch,
    including reconciliation of the existing FD-0004-authorized `16-Releases` path;
-3. keep prefixes 12–15 unchanged;
+3. keep prefixes 12–15 unchanged unless the later governed classification explicitly
+   selects one of them;
 4. require a separate Ratified implementing FD;
 5. require patch Audit/Report/Review before an ADR or governed implementation work
    unit;
-6. require the Human Architect to approve the lawful post-RC work-unit mechanism and
-   limit its first work product to the offline Pack Validator; and
+6. require the Human Architect to approve both the lawful post-RC work-unit mechanism
+   and the path classification, and limit the first work product to the offline
+   validation capability; and
 7. preserve APES, Pack instance, Runtime execution, model, network, and external side-
    effect prohibitions.
 
-**Finding:** a narrowed FRFC is recommended; the original five-path Draft is not.
+**Finding:** a narrowed FRFC may carry the candidate comparison forward; neither the
+one-path nor five-path assignment is proven by this Validation record alone.
 
 ## 4. Alternatives Matrix
 
@@ -259,9 +355,10 @@ cycle is human-reviewed. The FRFC should:
 |---|---|---|---|---|
 | A. Put code in an existing governance directory | Fails path purpose and isolation | No | High | Reject |
 | B. Add a root `src/` package without Foundation path authority | Fails current root/layout rules | Yes technically | High | Reject |
-| C. Claim only `FOUNDATION/11-Runtime/` through FRFC/FD/patch | Compliant if all gates pass | Yes | Lowest | **Recommend** |
-| D. Name `11-Runtime` through `15-Quality-Gates` now | Governance route can be made compliant | Yes | Unvalidated expansion | Reject now |
-| E. Start a real Builder Pack or APES pilot first | Lacks executable validator and Project authority | No | Highest | Reject |
+| C. Evaluate `FOUNDATION/11-Runtime/` through FRFC/FD/patch | Compliant if intrinsic Runtime mapping and all gates pass | Yes | Low | **Leading candidate** |
+| D. Evaluate a future Quality-Gate path without claiming it now | Requires separate path and product-boundary governance | Potentially | Medium | Live alternative |
+| E. Defer exact path assignment pending work-unit and Architect classification | Compliant and fail-safe | Not yet | Lowest | Live alternative |
+| F. Start a real Builder Pack or APES pilot first | Lacks executable validator and Project authority | No | Highest | Reject |
 
 ## 5. Foundation Relevance Assessment
 
@@ -308,37 +405,44 @@ Validation 04 Report + Builder self-Audit
 → independent Validation Audit
 → independent Human Review Approved / Approved with Notes
 → distinct Human Architect acceptance of Step-1 evidence
-→ narrowed FRFC-0003 Draft
+→ narrowed FRFC-0003 Draft comparing Runtime, Quality-Gate, and deferral alternatives
 → independent Audit + independent Human Review + Human Architect approval
+→ Human Architect path classification recorded through the approved FRFC route
 → FD-0006 Pending package + Ratification
 → exact Directory Standard / Foundation README / CHANGELOG patch
 → patch Audit + Report + Human Review
 → F-ADR for implementation choices
 → Human Architect-approved post-RC work-unit mechanism
-→ explicitly scoped offline Pack Validator work unit
+→ explicitly scoped offline validation work unit
 → code, tests, Audit, Report, Human Review
 ```
 
-No gate in this sequence is satisfied by creating this Report.
+The independent Audit gate has been attempted and returned `FAIL`; this correction does
+not itself satisfy that gate or any later acceptance gate.
 
 ## 9. Provisional Conclusion and Stop Condition
 
-**Provisional conclusion:** the validated minimal path is to claim only
-`FOUNDATION/11-Runtime/`. The proposed five-path activation is over-broad for the
-current evidence. A narrowed FRFC is necessary because the path change is Foundation-
-wide and normative; an ADR alone is insufficient.
+**Provisional conclusion:** the validated minimum is an offline validation capability.
+`FOUNDATION/11-Runtime/` is the leading path candidate, but it is not proven exclusive;
+a future Quality-Gate boundary and deferral remain live alternatives. The proposed
+five-path activation is over-broad for the current evidence. Any selected top-level
+path is Foundation-wide and normative and therefore requires the full governed route;
+an ADR alone is insufficient.
 
-**Stop condition:** reached. Validation 04 remains Draft while its Builder self-Audit
-is FAIL. No formal human Review is requested until an independent Audit returns PASS or
-PASS with Notes. FRFC-0003 must remain Draft and must not be Submitted, approved, or
-used to create FD-0006 while this evidence is pending.
+**Stop condition:** reached. The independent Audit dated 2026-08-07 returned `FAIL`
+with IA-03 and IA-06. This `0.2.0-draft` correction addresses those findings but does
+not close them; a follow-up independent Audit is required. Human Review remains
+Pending, and the current Human Auditor is not eligible to act as Reviewer or Human
+Architect for the same artifact. FRFC-0003 must remain Draft and must not be Submitted,
+approved, or used to create FD-0006 while this evidence is pending.
 
 ## 10. Change Log
 
 | Version | Date | Change |
 |---|---|---|
+| `0.2.0-draft` | 2026-08-07 | Correction cycle for independent Audit IA-03 and IA-06: added Evidence Schema §4 header fields and required §§1–5; changed `11-Runtime` from an exclusive conclusion to a leading candidate; recorded future Quality-Gate and deferral alternatives; retained Draft status pending follow-up independent Audit and distinct human gates. |
 | `0.1.0-draft` | 2026-08-05 | Created implementation-triggered evidence record; compared one-path and five-path activation; recommended only `11-Runtime`; held all next steps for human Review. This evidence is not usable for FCP Step 1 until the sequence `independent Validation Audit returns PASS or PASS with Notes` → `distinct Human Reviewer records Approved or Approved with Notes` → `separate Human Architect accepts the disposition` is fully satisfied; no part of that sequence is satisfied by this Draft Report. |
 
 ---
 
-*End of Validation Cycle 04 Report — Draft / provisional, 2026-08-05.*
+*End of Validation Cycle 04 Report — Draft / provisional, 2026-08-07.*
