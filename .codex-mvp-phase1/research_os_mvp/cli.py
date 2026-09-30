@@ -7,7 +7,9 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from research_os_mvp.ai import (
+    DEFAULT_GENERATION_BUDGET_SECONDS,
     DEFAULT_HEALTH_TIMEOUT_SECONDS,
+    DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS,
     check_ollama,
     load_ai_settings,
     save_ollama_settings,
@@ -335,7 +337,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--health-timeout-seconds",
         type=int,
         default=DEFAULT_HEALTH_TIMEOUT_SECONDS,
-        help="Ollama health-check timeout; generation keeps its separate timeout",
+        help="Ollama health-check timeout only",
+    )
+    configure_ai_parser.add_argument(
+        "--stream-idle-timeout-seconds",
+        type=int,
+        default=DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS,
+        help="maximum silence between streamed Ollama chunks",
+    )
+    configure_ai_parser.add_argument(
+        "--generation-budget-seconds",
+        type=int,
+        default=DEFAULT_GENERATION_BUDGET_SECONDS,
+        help="independent total wall-clock budget for one generation",
     )
     configure_ai_parser.add_argument("--max-output-tokens", type=int, default=1536)
     configure_ai_parser.add_argument(
@@ -690,13 +704,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                 reviewer_model=args.review_model,
                 endpoint=args.endpoint,
                 health_timeout_seconds=args.health_timeout_seconds,
+                stream_idle_timeout_seconds=args.stream_idle_timeout_seconds,
+                generation_budget_seconds=args.generation_budget_seconds,
                 max_output_tokens=args.max_output_tokens,
                 automatic_research=not args.manual,
             )
             settings = load_ai_settings(args.workspace)
             assert settings is not None
             result = check_ollama(settings)
-            result.update({"result": "CONFIGURED", "settings": str(path)})
+            result.update(
+                {
+                    "result": "CONFIGURED",
+                    "settings": str(path),
+                    "model_guidance": (
+                        f"已选择 {settings.model}。较大的模型通常质量更好，"
+                        "但一次完整生成可能需要数分钟；若过慢，"
+                        "可重新运行 configure-ollama 并用 --model 选择更小模型。"
+                    ),
+                }
+            )
             _print_result(result)
         elif args.command == "ollama-status":
             settings = load_ai_settings(args.workspace)

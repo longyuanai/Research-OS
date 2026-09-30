@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from research_os_mvp.ai import (
     AIProviderError,
@@ -16,13 +17,26 @@ from research_os_mvp.errors import RunStateError
 from research_os_mvp.runtime import verify_run
 from research_os_mvp.wizard import (
     _choose_category,
+    _generate_with_progress,
     render_easy_review,
     run_easy_wizard,
     run_wizard,
 )
+from tests.helpers import materialize_legacy_runs
 
 
 class WizardTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._legacy_runs_temporary = tempfile.TemporaryDirectory()
+        cls.legacy_runs_root = materialize_legacy_runs(
+            Path(cls._legacy_runs_temporary.name)
+        )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._legacy_runs_temporary.cleanup()
+
     @staticmethod
     def _fake_ai_generate(settings: AISettings, _prompt: str) -> AIResponse:
         model = settings.model
@@ -32,6 +46,44 @@ class WizardTests(unittest.TestCase):
             model=model,
             endpoint="http://127.0.0.1:11434",
             elapsed_seconds=0.1,
+        )
+
+    @patch("research_os_mvp.wizard.generate_research")
+    def test_wizard_routes_stream_progress_through_output_fn(
+        self,
+        generate_mock: Mock,
+    ) -> None:
+        settings = AISettings(
+            provider="ollama",
+            endpoint="http://127.0.0.1:11434",
+            model="qwen2.5:7b",
+            reviewer_model="qwen2.5:7b",
+        )
+        expected = self._fake_ai_generate(settings, "prompt")
+        output: list[str] = []
+
+        def fake_generate(
+            _settings: AISettings,
+            _prompt: str,
+            *,
+            progress_fn: object,
+        ) -> AIResponse:
+            assert callable(progress_fn)
+            progress_fn("本地 AI 生成进度：已用 15.0 秒，已接收 20 字符。")
+            return expected
+
+        generate_mock.side_effect = fake_generate
+        actual = _generate_with_progress(
+            settings,
+            "prompt",
+            generate_mock,
+            output.append,
+        )
+
+        self.assertIs(actual, expected)
+        self.assertEqual(
+            output,
+            ["本地 AI 生成进度：已用 15.0 秒，已接收 20 字符。"],
         )
 
     def test_category_choice_rejects_non_positive_numbers(self) -> None:
@@ -997,7 +1049,7 @@ class WizardTests(unittest.TestCase):
             self.assertIn("按 A 重试生成", rendered)
 
     def test_existing_run_verify_unchanged_after_ux02(self) -> None:
-        runs_root = Path(__file__).resolve().parents[1] / "workspace" / "runs"
+        runs_root = self.legacy_runs_root
         expected = {
             "run-20260820t062550z-969cbc95": (
                 "6447a0f78ef68a7775b624c4189d6306b958a3abcf906191a199be35fe497a3a",
@@ -1037,12 +1089,7 @@ class WizardTests(unittest.TestCase):
                 self.assertEqual(actual_evidence_hashes, evidence_hashes)
 
     def test_existing_run_verify_unchanged_after_ux01(self) -> None:
-        run_dir = (
-            Path(__file__).resolve().parents[1]
-            / "workspace"
-            / "runs"
-            / "run-20260820t062550z-969cbc95"
-        )
+        run_dir = self.legacy_runs_root / "run-20260820t062550z-969cbc95"
         status = verify_run(run_dir)
         selected = {
             key: status[key]
@@ -1092,13 +1139,65 @@ class WizardTests(unittest.TestCase):
             },
         )
 
+    def test_existing_runs_verify_unchanged_after_ux03(self) -> None:
+        runs_root = self.legacy_runs_root
+        expected = {
+            "run-20260820t062550z-969cbc95": {
+                "event_count": 23,
+                "evidence_count": 2,
+                "hashed_file_count": 11,
+                "latest_review_hash": "6447a0f78ef68a7775b624c4189d6306b958a3abcf906191a199be35fe497a3a",
+                "evidence_hashes": {
+                    "evidence/EVID-01-task-local-01-capture-goal.json": "047a70c456410ae1187b4c3dada3cf1a91288cc4a14585ceba089b300b292712",
+                    "evidence/EVID-02-task-local-02-record-evaluation-frame.json": "092d397326fcfcabf93751a09d5732fdd4cf4940ff4897ca33a7957d44aaf1aa",
+                },
+            },
+            "run-20260820t071348z-65b76017": {
+                "event_count": 23,
+                "evidence_count": 2,
+                "hashed_file_count": 11,
+                "latest_review_hash": "c1fa6b16207df8e3c0997740ba15b5d942d90a07a64e48735ccc231153f126da",
+                "evidence_hashes": {
+                    "evidence/EVID-01-task-local-01-capture-goal.json": "ac8ce03f2d912b10bbb93fa1eb4991e4798ae7963eb6c57efa6612f67d4c5712",
+                    "evidence/EVID-02-task-local-02-record-evaluation-frame.json": "de215c408d6e642f72d0fa72c1873c178dd35f9aca7423a0f7cd08fdf372f7aa",
+                },
+            },
+        }
+        for run_id, expected_run in expected.items():
+            with self.subTest(run_id=run_id):
+                run_dir = runs_root / run_id
+                status = verify_run(run_dir)
+                self.assertEqual(status["integrity"], "verified")
+                self.assertEqual(status["status"], "completed")
+                self.assertEqual(status["checkpoint"], "current")
+                self.assertEqual(status["report_count"], 4)
+                self.assertEqual(
+                    status["pack_sha256"],
+                    "4064fce8de159c9be178dd646c3b85c0a5031692479e5549a2d41a243351f514",
+                )
+                for key in (
+                    "event_count",
+                    "evidence_count",
+                    "hashed_file_count",
+                    "latest_review_hash",
+                ):
+                    self.assertEqual(status[key], expected_run[key])
+                manifest = json.loads(
+                    (run_dir / "HASHES.json").read_text(encoding="utf-8")
+                )
+                evidence_hashes = {
+                    item["path"]: item["sha256"]
+                    for item in manifest["files"]
+                    if item["path"].startswith("evidence/")
+                }
+                self.assertEqual(
+                    evidence_hashes,
+                    expected_run["evidence_hashes"],
+                )
+
     def test_evidence_content_hashes_unchanged(self) -> None:
         evidence_dir = (
-            Path(__file__).resolve().parents[1]
-            / "workspace"
-            / "runs"
-            / "run-20260820t062550z-969cbc95"
-            / "evidence"
+            self.legacy_runs_root / "run-20260820t062550z-969cbc95" / "evidence"
         )
         expected = {
             "EVID-01-task-local-01-capture-goal.json": (

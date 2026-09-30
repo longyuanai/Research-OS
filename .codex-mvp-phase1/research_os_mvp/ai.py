@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import queue
 import re
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -18,6 +20,9 @@ SETTINGS_FILE = "settings.json"
 SETTINGS_SCHEMA = "research-os-mvp-settings/0.1"
 DEFAULT_ENDPOINT = "http://127.0.0.1:11434"
 DEFAULT_HEALTH_TIMEOUT_SECONDS = 60
+DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS = 60
+DEFAULT_GENERATION_BUDGET_SECONDS = 900
+DEFAULT_PROGRESS_INTERVAL_SECONDS = 15
 MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$")
 LOCAL_RESEARCH_SYSTEM_PROMPT = (
@@ -42,6 +47,8 @@ class AISettings:
     reviewer_model: str
     health_timeout_seconds: int = DEFAULT_HEALTH_TIMEOUT_SECONDS
     timeout_seconds: int = 300
+    stream_idle_timeout_seconds: int = DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS
+    generation_budget_seconds: int = DEFAULT_GENERATION_BUDGET_SECONDS
     max_response_chars: int = 200_000
     max_output_tokens: int = 1536
     automatic_research: bool = True
@@ -61,6 +68,8 @@ class AIResponse:
 
 
 OpenFn = Callable[..., Any]
+ProgressFn = Callable[[str], None]
+MonotonicFn = Callable[[], float]
 
 
 def _validate_local_endpoint(value: str) -> str:
@@ -106,6 +115,14 @@ def _settings_from_data(value: Any) -> AISettings:
         DEFAULT_HEALTH_TIMEOUT_SECONDS,
     )
     timeout = ai.get("timeout_seconds", 300)
+    stream_idle_timeout = ai.get(
+        "stream_idle_timeout_seconds",
+        DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS,
+    )
+    generation_budget = ai.get(
+        "generation_budget_seconds",
+        DEFAULT_GENERATION_BUDGET_SECONDS,
+    )
     maximum = ai.get("max_response_chars", 200_000)
     max_output_tokens = ai.get("max_output_tokens", 1536)
     automatic = ai.get("automatic_research", True)
@@ -113,6 +130,10 @@ def _settings_from_data(value: Any) -> AISettings:
         raise AIProviderError("Ollama 健康检查超时必须在 1-300 秒之间")
     if not isinstance(timeout, int) or not 10 <= timeout <= 900:
         raise AIProviderError("AI 超时必须在 10-900 秒之间")
+    if not isinstance(stream_idle_timeout, int) or not 1 <= stream_idle_timeout <= 300:
+        raise AIProviderError("Ollama 流式块间空闲超时必须在 1-300 秒之间")
+    if not isinstance(generation_budget, int) or not 10 <= generation_budget <= 7200:
+        raise AIProviderError("Ollama 生成总时长预算必须在 10-7200 秒之间")
     if not isinstance(maximum, int) or not 1_000 <= maximum <= 500_000:
         raise AIProviderError("AI 输出上限必须在 1000-500000 字符之间")
     if not isinstance(max_output_tokens, int) or not 256 <= max_output_tokens <= 4096:
@@ -126,6 +147,8 @@ def _settings_from_data(value: Any) -> AISettings:
         reviewer_model=reviewer_model,
         health_timeout_seconds=health_timeout,
         timeout_seconds=timeout,
+        stream_idle_timeout_seconds=stream_idle_timeout,
+        generation_budget_seconds=generation_budget,
         max_response_chars=maximum,
         max_output_tokens=max_output_tokens,
         automatic_research=automatic,
@@ -148,6 +171,8 @@ def save_ollama_settings(
     reviewer_model: str | None = None,
     endpoint: str = DEFAULT_ENDPOINT,
     health_timeout_seconds: int = DEFAULT_HEALTH_TIMEOUT_SECONDS,
+    stream_idle_timeout_seconds: int = DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS,
+    generation_budget_seconds: int = DEFAULT_GENERATION_BUDGET_SECONDS,
     max_output_tokens: int = 1536,
     automatic_research: bool = True,
 ) -> Path:
@@ -164,6 +189,8 @@ def save_ollama_settings(
             "reviewer_model": reviewer_model or model,
             "health_timeout_seconds": health_timeout_seconds,
             "timeout_seconds": 300,
+            "stream_idle_timeout_seconds": stream_idle_timeout_seconds,
+            "generation_budget_seconds": generation_budget_seconds,
             "max_response_chars": 200_000,
             "max_output_tokens": max_output_tokens,
             "automatic_research": automatic_research,
@@ -225,6 +252,8 @@ def check_ollama(settings: AISettings, *, open_fn: OpenFn = urllib.request.urlop
         "health_timeout_seconds": settings.health_timeout_seconds,
         "health_check_elapsed_seconds": round(time.monotonic() - started, 3),
         "timeout_seconds": settings.timeout_seconds,
+        "stream_idle_timeout_seconds": settings.stream_idle_timeout_seconds,
+        "generation_budget_seconds": settings.generation_budget_seconds,
         "model": settings.model,
         "model_available": settings.model in names,
         "reviewer_model": settings.reviewer_model,
@@ -238,6 +267,9 @@ def generate_research(
     prompt: str,
     *,
     open_fn: OpenFn = urllib.request.urlopen,
+    progress_fn: ProgressFn | None = None,
+    monotonic_fn: MonotonicFn = time.monotonic,
+    progress_interval_seconds: float = DEFAULT_PROGRESS_INTERVAL_SECONDS,
 ) -> AIResponse:
     cleaned = prompt.strip()
     if not cleaned:
@@ -246,7 +278,7 @@ def generate_research(
         raise AIProviderError("AI 研究指令超过 120000 字符")
     payload = {
         "model": settings.model,
-        "stream": False,
+        "stream": True,
         "think": False,
         "messages": [
             {
@@ -267,40 +299,239 @@ def generate_research(
         headers={"Content-Type": "application/json; charset=utf-8"},
         method="POST",
     )
-    started = time.monotonic()
+    started = monotonic_fn()
+    chunks: list[str] = []
+    content_characters = 0
+    thinking_character_count = 0
+    returned_model = settings.model
+    done_reason: str | None = None
+    eval_count: int | None = None
+    saw_record = False
+    saw_done = False
+    raw_bytes = 0
+    line_number = 0
+    next_progress = progress_interval_seconds
+
+    def elapsed_seconds() -> float:
+        return monotonic_fn() - started
+
+    def check_budget() -> float:
+        elapsed = elapsed_seconds()
+        if elapsed >= settings.generation_budget_seconds:
+            raise AIProviderError(
+                "Ollama AI 生成超出总时长预算"
+                f"（已用 {elapsed:.3f} 秒；"
+                f"generation_budget_seconds={settings.generation_budget_seconds} 秒；"
+                f"已生成 {content_characters} 字符）"
+            )
+        return elapsed
+
+    stream_events: queue.Queue[tuple[str, Any, float]] = queue.Queue()
+    stop_reader = threading.Event()
+    event_processed = threading.Event()
+    response_holder: list[Any] = []
+
+    def publish_stream_event(kind: str, payload: Any) -> None:
+        if stop_reader.is_set():
+            return
+        event_processed.clear()
+        stream_events.put((kind, payload, monotonic_fn()))
+        while not stop_reader.is_set() and not event_processed.wait(0.05):
+            pass
+
+    def read_stream() -> None:
+        try:
+            with open_fn(
+                request,
+                timeout=min(
+                    settings.stream_idle_timeout_seconds,
+                    settings.generation_budget_seconds,
+                ),
+            ) as response:
+                response_holder.append(response)
+                while not stop_reader.is_set():
+                    try:
+                        raw_line = response.readline(MAX_HTTP_RESPONSE_BYTES + 1)
+                    except (OSError, urllib.error.URLError) as exc:
+                        publish_stream_event("read_error", exc)
+                        return
+                    publish_stream_event("line", raw_line)
+                    if not raw_line:
+                        return
+        except urllib.error.HTTPError as exc:
+            publish_stream_event("http_error", exc)
+        except (OSError, urllib.error.URLError) as exc:
+            publish_stream_event("open_error", exc)
+        except Exception as exc:  # noqa: BLE001 - transfer worker failures to caller
+            publish_stream_event("unexpected_error", exc)
+
+    def stop_stream() -> None:
+        stop_reader.set()
+        event_processed.set()
+        if response_holder:
+            close = getattr(response_holder[0], "close", None)
+            if callable(close):
+                try:
+                    close()
+                except OSError:
+                    pass
+
+    def idle_timeout_error(elapsed: float, cause: object | None = None) -> AIProviderError:
+        detail = f"原始错误：{cause}" if cause is not None else ""
+        return AIProviderError(
+            "Ollama AI 生成流式读取空闲超时"
+            f"（实际等待 {elapsed:.3f} 秒；"
+            "两个完整数据块之间的最长间隔 "
+            f"stream_idle_timeout_seconds="
+            f"{settings.stream_idle_timeout_seconds} 秒；"
+            f"旧配置 timeout_seconds={settings.timeout_seconds} 秒；"
+            f"已生成 {content_characters} 字符）。"
+            "可调高 stream_idle_timeout_seconds 或改用更小模型。"
+            f"{detail}"
+        )
+
+    reader = threading.Thread(
+        target=read_stream,
+        name="research-os-ollama-stream-reader",
+        daemon=True,
+    )
+    last_chunk_elapsed = 0.0
     try:
-        with open_fn(request, timeout=settings.timeout_seconds) as response:
-            value = _read_json_response(response)
+        reader.start()
+        try:
+            while True:
+                elapsed = check_budget()
+                if elapsed - last_chunk_elapsed >= settings.stream_idle_timeout_seconds:
+                    raise idle_timeout_error(elapsed)
+                if (
+                    progress_fn is not None
+                    and progress_interval_seconds > 0
+                    and elapsed >= next_progress
+                ):
+                    progress_fn(
+                        "本地 AI 生成进度："
+                        f"已用 {elapsed:.1f} 秒，已接收 {content_characters} 字符。"
+                    )
+                    next_progress = elapsed + progress_interval_seconds
+
+                deadlines = [
+                    settings.generation_budget_seconds - elapsed,
+                    settings.stream_idle_timeout_seconds
+                    - (elapsed - last_chunk_elapsed),
+                ]
+                if progress_fn is not None and progress_interval_seconds > 0:
+                    deadlines.append(next_progress - elapsed)
+                wait_seconds = max(0.0, min(deadlines))
+                try:
+                    kind, payload, event_at = stream_events.get(timeout=wait_seconds)
+                except queue.Empty:
+                    continue
+
+                try:
+                    event_elapsed = event_at - started
+                    if event_elapsed >= settings.generation_budget_seconds:
+                        check_budget()
+                    if kind == "http_error" or kind == "open_error":
+                        raise payload
+                    if kind == "unexpected_error":
+                        raise payload
+                    if kind == "read_error":
+                        raise idle_timeout_error(event_elapsed, payload) from payload
+                    if kind != "line" or not isinstance(payload, bytes):
+                        raise AIProviderError("Ollama 流式读取器返回了无效事件")
+                    raw_line = payload
+                    if not raw_line:
+                        break
+                    if raw_line.strip():
+                        last_chunk_elapsed = event_elapsed
+                    line_number += 1
+                    raw_bytes += len(raw_line)
+                    if raw_bytes > MAX_HTTP_RESPONSE_BYTES:
+                        raise AIProviderError("Ollama 流式返回内容超过安全上限")
+                    if not raw_line.strip():
+                        continue
+                    try:
+                        value = json.loads(raw_line.decode("utf-8"))
+                    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                        raise AIProviderError(
+                            f"Ollama 流式响应第 {line_number} 行不是有效 NDJSON"
+                        ) from exc
+                    if not isinstance(value, dict):
+                        raise AIProviderError(
+                            f"Ollama 流式响应第 {line_number} 行必须是 JSON 对象"
+                        )
+                    saw_record = True
+                    error = value.get("error")
+                    if isinstance(error, str) and error:
+                        raise AIProviderError(f"Ollama 流式生成返回错误：{error}")
+                    model = value.get("model")
+                    if isinstance(model, str):
+                        returned_model = model
+                    message = value.get("message")
+                    if isinstance(message, dict):
+                        content = message.get("content")
+                        if isinstance(content, str):
+                            chunks.append(content)
+                            content_characters += len(content)
+                            if content_characters > settings.max_response_chars:
+                                raise AIProviderError("Ollama 正文超过配置的字符上限")
+                        thinking = message.get("thinking")
+                        if isinstance(thinking, str):
+                            thinking_character_count += len(thinking)
+                    current_done_reason = value.get("done_reason")
+                    if isinstance(current_done_reason, str):
+                        done_reason = current_done_reason
+                    current_eval_count = value.get("eval_count")
+                    if isinstance(current_eval_count, int):
+                        eval_count = current_eval_count
+                    if value.get("done") is True:
+                        saw_done = True
+                    if (
+                        progress_fn is not None
+                        and progress_interval_seconds > 0
+                        and event_elapsed >= next_progress
+                    ):
+                        progress_fn(
+                            "本地 AI 生成进度："
+                            f"已用 {event_elapsed:.1f} 秒，已接收 {content_characters} 字符。"
+                        )
+                        next_progress = event_elapsed + progress_interval_seconds
+                    if saw_done:
+                        break
+                finally:
+                    event_processed.set()
+        finally:
+            stop_stream()
     except urllib.error.HTTPError as exc:
         detail = exc.read(4096).decode("utf-8", errors="replace")
         raise AIProviderError(f"Ollama 请求失败（HTTP {exc.code}）：{detail}") from exc
+    except AIProviderError:
+        raise
     except (OSError, urllib.error.URLError) as exc:
-        elapsed = time.monotonic() - started
+        elapsed = elapsed_seconds()
         raise AIProviderError(
             "Ollama AI 生成调用失败"
-            f"（实际等待 {elapsed:.3f} 秒；timeout_seconds={settings.timeout_seconds} 秒）；"
-            f"可调高 timeout_seconds 或改用更小模型。原始错误：{exc}"
+            f"（实际等待 {elapsed:.3f} 秒；"
+            f"旧配置 timeout_seconds={settings.timeout_seconds} 秒）；"
+            f"流式连接空闲上限为 {settings.stream_idle_timeout_seconds} 秒；"
+            "请确认 Ollama 服务和模型可用。"
+            f"原始错误：{exc}"
         ) from exc
-    message = value.get("message")
-    content = message.get("content") if isinstance(message, dict) else None
-    if not isinstance(content, str) or not content.strip():
-        error = value.get("error")
-        raise AIProviderError(f"Ollama 没有返回有效正文：{error or '未知原因'}")
-    content = content.strip()
-    if len(content) > settings.max_response_chars:
-        raise AIProviderError("Ollama 正文超过配置的字符上限")
-    returned_model = value.get("model")
-    done_reason = value.get("done_reason")
-    eval_count = value.get("eval_count")
-    thinking = message.get("thinking") if isinstance(message, dict) else None
+    if not saw_record:
+        raise AIProviderError("Ollama 返回了空的 NDJSON 流")
+    if not saw_done:
+        raise AIProviderError("Ollama NDJSON 流在生成完成标记前意外结束")
+    content = "".join(chunks).strip()
+    if not content:
+        raise AIProviderError("Ollama NDJSON 流没有返回有效正文")
     return AIResponse(
         content=content,
         provider=settings.provider,
-        model=returned_model if isinstance(returned_model, str) else settings.model,
+        model=returned_model,
         endpoint=settings.endpoint,
-        elapsed_seconds=round(time.monotonic() - started, 3),
-        done_reason=done_reason if isinstance(done_reason, str) else None,
-        eval_count=eval_count if isinstance(eval_count, int) else None,
-        thinking_character_count=len(thinking) if isinstance(thinking, str) else 0,
+        elapsed_seconds=round(elapsed_seconds(), 3),
+        done_reason=done_reason,
+        eval_count=eval_count,
+        thinking_character_count=thinking_character_count,
         truncated=done_reason == "length",
     )

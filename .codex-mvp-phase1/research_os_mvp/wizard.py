@@ -556,13 +556,25 @@ def _record_ai_response(
     )
 
 
+def _generate_with_progress(
+    settings: AISettings,
+    prompt: str,
+    ai_generate_fn: AIGenerateFn,
+    output_fn: OutputFn,
+) -> AIResponse:
+    if ai_generate_fn is generate_research:
+        return generate_research(settings, prompt, progress_fn=output_fn)
+    return ai_generate_fn(settings, prompt)
+
+
 def _automatic_ai_research(
     run_dir: Path,
     settings: AISettings,
     ai_generate_fn: AIGenerateFn,
+    output_fn: OutputFn,
 ) -> dict[str, Any]:
     prompt = render_research_handoff(run_dir)
-    response = ai_generate_fn(settings, prompt)
+    response = _generate_with_progress(settings, prompt, ai_generate_fn, output_fn)
     return _record_ai_response(run_dir, response)
 
 
@@ -622,6 +634,7 @@ def _audit_ai_research(
     run_dir: Path,
     settings: AISettings,
     ai_generate_fn: AIGenerateFn,
+    output_fn: OutputFn,
 ) -> dict[str, Any]:
     drafts = _ai_evidence_for_task(
         run_dir,
@@ -649,7 +662,12 @@ def _audit_ai_research(
         f"## 已导入资料摘录\n\n{source_text or '没有导入原始资料。'}"
     )
     reviewer_settings = replace(settings, model=settings.reviewer_model)
-    response = ai_generate_fn(reviewer_settings, prompt)
+    response = _generate_with_progress(
+        reviewer_settings,
+        prompt,
+        ai_generate_fn,
+        output_fn,
+    )
     return _record_ai_audit_response(
         run_dir,
         response,
@@ -701,6 +719,7 @@ def _revise_ai_research(
     settings: AISettings,
     feedback: str,
     ai_generate_fn: AIGenerateFn,
+    output_fn: OutputFn,
     review_decision_hash: str,
 ) -> dict[str, Any]:
     drafts = _ai_evidence_for_task(
@@ -732,7 +751,7 @@ def _revise_ai_research(
         f"{cleaned}\n\n"
         "请输出完整修订稿，并明确列出本次修改点。"
     )
-    response = ai_generate_fn(settings, prompt)
+    response = _generate_with_progress(settings, prompt, ai_generate_fn, output_fn)
     return _record_ai_response(
         run_dir,
         response,
@@ -802,7 +821,12 @@ def _easy_approval_loop(
             automatic_attempted = True
             output_fn(f"正在调用本地 AI（{settings.model}），请稍候……")
             try:
-                imported = _automatic_ai_research(run_dir, settings, ai_generate_fn)
+                imported = _automatic_ai_research(
+                    run_dir,
+                    settings,
+                    ai_generate_fn,
+                    output_fn,
+                )
                 ai_attempt_failed = False
                 output_fn(f"本地 AI 初稿已写入 Evidence：{imported['id']}")
             except MVPError as exc:
@@ -847,7 +871,12 @@ def _easy_approval_loop(
                 continue
             output_fn(f"正在重试本地 AI（{settings.model}），请稍候……")
             try:
-                imported = _automatic_ai_research(run_dir, settings, ai_generate_fn)
+                imported = _automatic_ai_research(
+                    run_dir,
+                    settings,
+                    ai_generate_fn,
+                    output_fn,
+                )
                 ai_attempt_failed = False
                 output_fn(f"本地 AI 初稿已写入 Evidence：{imported['id']}")
             except MVPError as exc:
@@ -895,6 +924,7 @@ def _easy_approval_loop(
                     settings,
                     feedback,
                     ai_generate_fn,
+                    output_fn,
                     reviewed["latest_review_hash"],
                 )
                 output_fn(f"AI 返工稿已写入 Evidence：{imported['id']}")
@@ -946,7 +976,12 @@ def _easy_approval_loop(
                 continue
             output_fn(f"正在调用审计模型（{settings.reviewer_model}），请稍候……")
             try:
-                imported = _audit_ai_research(run_dir, settings, ai_generate_fn)
+                imported = _audit_ai_research(
+                    run_dir,
+                    settings,
+                    ai_generate_fn,
+                    output_fn,
+                )
                 output_fn(f"AI 审计意见已写入 Evidence：{imported['id']}")
             except MVPError as exc:
                 output_fn(f"AI 审计未完成：{exc}")

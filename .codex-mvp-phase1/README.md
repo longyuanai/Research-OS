@@ -239,7 +239,7 @@ python -m research_os_mvp effective-outputs <run-dir>
 python -m research_os_mvp verify-effective-manifest <manifest.json>
 python -m research_os_mvp sign-effective-manifest <manifest.json> --identity <id> --key <private-key> --public-key <public-key> --output <attestation.json>
 python -m research_os_mvp verify-effective-manifest-signature <manifest.json> <attestation.json>
-python -m research_os_mvp configure-ollama --workspace <dir> --model qwen2.5:7b [--review-model qwen2.5:7b] [--health-timeout-seconds 60] [--max-output-tokens 1536]
+python -m research_os_mvp configure-ollama --workspace <dir> --model qwen2.5:7b [--review-model qwen2.5:7b] [--health-timeout-seconds 60] [--stream-idle-timeout-seconds 60] [--generation-budget-seconds 900] [--max-output-tokens 1536]
 python -m research_os_mvp ollama-status --workspace <dir>
 python -m research_os_mvp benchmark-ollama --workspace <dir> --model qwen3:1.7b --model qwen2.5:3b-instruct-q4_K_M --model qwen2.5:7b [--output <report.json>]
 python -m research_os_mvp export-obsidian <run-dir> <vault-dir>
@@ -361,7 +361,8 @@ Reviewer 信任策略，且适用的 Claim 门禁通过后，才成为下游默�
 `cancel` 只返回已验证状态，不改写 Event 或 Hash。
 
 Ollama 生成固定关闭思考输出，默认最多生成 1536 Token，并保存 `done_reason`、
-`eval_count` 和截断状态。`benchmark-ollama` 只将完整报告写入指定文件；其自动门槛
+`eval_count` 和截断状态。生成响应使用 NDJSON 流式传输，不再等待整段内容
+完成后才返回。`benchmark-ollama` 只将完整报告写入指定文件；其自动门槛
 检查结构、未知项、验证计划、结束状态和无来源精确数值，不等于事实正确性评测。
 
 ## 本地模型基准与默认策略
@@ -543,21 +544,42 @@ Claim 评估分支，其 effective outputs、`manifest_sha256` 与既有 detache
 
 ## UX-02：本地 AI 调用链修复（2026-08-20）
 
-Ollama 健康检查使用独立的 `health_timeout_seconds`，默认 60 秒；这比默认 300 秒的
-生成超时短，避免服务不可用时让界面等待五分钟，同时给本机服务和模型冷启动留出余量。
+Ollama 健康检查使用独立的 `health_timeout_seconds`，默认 60 秒；这比 UX-02 时
+默认 300 秒的整次生成等待短，避免服务不可用时让界面等待五分钟，同时给本机
+服务和模型冷启动留出余量。
 旧 `settings.json` 缺少该字段时自动使用默认值。`configure-ollama` 可通过
-`--health-timeout-seconds` 设置，`ollama-status` 会显示配置值、健康检查实际耗时和独立
-的生成超时。健康检查与生成调用错误分别报告步骤、实际等待时间和对应配置键。
+`--health-timeout-seconds` 设置。UX-03 之后，生成超时由块间空闲上限和总预算
+取代；`timeout_seconds` 只为旧配置兼容保留，不再作为整次生成的读超时。
 
 第 2 步的自动调用仍只尝试一次，防止失败循环；只有本地 AI 已配置且当前尚无草稿时，
 Reviewer 提示才显示 `A 重试 AI`。这是用户显式重试，不改变 `Y/R/X/回车` 的 Reviewer
 决定语义，也不修改 Evidence、Report、Pack 或 Run 状态机。
+
+## UX-03：本地 AI 流式生成（2026-08-20）
+
+Ollama 生成由后台守护读取线程逐行接收 NDJSON 数据块，主控制循环拼接
+`message.content`。`stream_idle_timeout_seconds` 默认 60 秒，表示两个完整、
+非空数据块之间允许的最长静默时间；只要数据持续到达，整次生成可以超过 60 秒。
+`generation_budget_seconds` 是独立的硬总时长预算，默认 900 秒。即使底层
+`readline()` 一直不返回，主控制循环仍会按时触发进度回调，并在达到总预算时
+关闭响应、中止生成，报告已用时间和已接收字符数。旧 `settings.json` 没有
+这两个字段时自动使用上述默认值。
+
+交互向导默认每 15 秒显示已用时间和已接收字符数；没有完整数据块到达时也会继续
+显示。这些进度文字只通过
+`output_fn` 输出到控制台，不进入 Evidence、Report 或 Pack；`AIResponse` 对外字段保持
+不变。`configure-ollama` 会说明较大模型可能需要数分钟，若过慢可由用户
+重新选择更小模型；它不会自动更换模型或运行基准测试。
 
 ## 测试
 
 ```powershell
 & $MvpPython -m unittest discover -s tests -v
 ```
+
+旧 Run 回归样本以 `tests/fixtures/legacy-runs.bundle.json` 随测试版本化；测试运行时
+在临时目录按 Base64 原字节还原，不依赖被忽略的 `workspace/runs`。因此干净克隆
+与开发机本地状态使用同一夹具。
 
 ## 已知限制
 

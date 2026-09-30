@@ -57,6 +57,46 @@ class CLITests(unittest.TestCase):
             self.assertEqual(result["health_timeout_seconds"], 88)
             self.assertEqual(result["timeout_seconds"], 300)
 
+    @patch("research_os_mvp.cli.check_ollama")
+    def test_configure_ollama_reports_stream_limits_and_model_guidance(
+        self,
+        check_mock: Mock,
+    ) -> None:
+        def fake_check(settings: AISettings) -> dict[str, object]:
+            return {
+                "provider": settings.provider,
+                "stream_idle_timeout_seconds": settings.stream_idle_timeout_seconds,
+                "generation_budget_seconds": settings.generation_budget_seconds,
+            }
+
+        check_mock.side_effect = fake_check
+        with tempfile.TemporaryDirectory() as temporary:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                exit_code = main(
+                    [
+                        "configure-ollama",
+                        "--workspace",
+                        temporary,
+                        "--model",
+                        "qwen2.5:7b",
+                        "--stream-idle-timeout-seconds",
+                        "44",
+                        "--generation-budget-seconds",
+                        "1200",
+                    ]
+                )
+            self.assertEqual(exit_code, 0)
+            settings = load_ai_settings(temporary)
+            assert settings is not None
+            self.assertEqual(settings.stream_idle_timeout_seconds, 44)
+            self.assertEqual(settings.generation_budget_seconds, 1200)
+            result = json.loads(output.getvalue())
+            self.assertEqual(result["stream_idle_timeout_seconds"], 44)
+            self.assertEqual(result["generation_budget_seconds"], 1200)
+            self.assertIn("数分钟", result["model_guidance"])
+            self.assertIn("更小模型", result["model_guidance"])
+
     def test_effective_outputs_command_returns_stable_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
