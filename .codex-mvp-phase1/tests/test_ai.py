@@ -888,14 +888,17 @@ class AIStreamFailureModeTests(unittest.TestCase):
             )
 
     def test_http_error_is_reported_with_status_and_detail(self) -> None:
+        error = urllib.error.HTTPError(
+            "http://127.0.0.1:11434/api/chat",
+            404,
+            "Not Found",
+            None,  # type: ignore[arg-type]
+            io.BytesIO(b'{"error":"model not found"}'),
+        )
+        self.addCleanup(error.close)
+
         def fake_open(_request: object, **_kwargs: object) -> FakeNDJSONResponse:
-            raise urllib.error.HTTPError(
-                "http://127.0.0.1:11434/api/chat",
-                404,
-                "Not Found",
-                None,  # type: ignore[arg-type]
-                io.BytesIO(b'{"error":"model not found"}'),
-            )
+            raise error
 
         with self.assertRaises(AIProviderError) as raised:
             generate_research(_stream_settings(), "测试 HTTP 错误", open_fn=fake_open)
