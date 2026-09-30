@@ -7,7 +7,9 @@ Runtime。
 > **当前版本：`1.0.0-rc.1`（Release Candidate）**<br>
 > 这是 Foundation 文档与治理基线，不是已经可运行的 AI 平台。仓库当前不包含
 > 生产 Runtime、可执行 Builder Pack、Workspace、已激活 Project 或 APES 业务
-> 数据，也不应被用于无人值守的生产任务。
+> 数据，也不应被用于无人值守的生产任务。<br>
+> 另有一个本地运行的隔离实验原型 [`.codex-mvp-phase1/`](./.codex-mvp-phase1/README.md)，
+> 仅用于验证产品闭环，不是 Foundation 规范实现。
 
 公开 Pre-release：[`v1.0.0-rc.1 — docs-first RC`](https://github.com/longyuanai/Research-OS/releases/tag/v1.0.0-rc.1)
 （2026-08-05）。
@@ -30,12 +32,21 @@ Deliverable 和审计记录。
 
 | 范围 | 当前状态 |
 |---|---|
-| Foundation Constitution、Governance、Standards | 已形成 `1.0.0-rc.1` 基线 |
+| Foundation Constitution、Governance、Standards | 已形成 `1.0.0-rc.1` 基线；治理周期已暂停（见 [`GOVERNANCE-PAUSE.md`](./GOVERNANCE-PAUSE.md)） |
 | Audit、Report、Review、FD/FRFC 证据链 | 已存在并可人工复核 |
-| Validation Cycle | 已完成三轮记录 |
+| Validation Cycle | 01–03 已完成记录；04/05 已随治理暂停归档，未进入 Review |
 | 技术选型与分阶段实施路线 | Proposed / Non-normative |
-| Python Domain Kernel、Pack Compiler、CLI | 尚未实现，须先通过实现 RFC 门禁 |
-| Runtime、LangGraph Adapter、PostgreSQL、Docker Sandbox | 尚未实现 |
+| MVP 隔离实验原型（[`.codex-mvp-phase1/`](./.codex-mvp-phase1/README.md)） | 可在本机运行；**非 Foundation 规范实现**，不改变任何治理状态 |
+| └ CLI、中文向导与实验性 JSON Pack | 已实现：一句话目标生成恰好 3 个 Task 的 Pack，严格校验并封存 |
+| └ 本地 Run Runtime | 已实现：逐 Task 人工门禁（Approved / Changes Requested / Rejected）、append-only 事件与审查哈希链、`HASHES.*` 完整性校验、跨进程文件锁、SQLite 检查点、不可变修订 Evidence |
+| └ 证据与 Claim 门禁 | 已实现：资料导入（PDF/网页/文本/代码目录/Git 快照）、Claim 确认与引用硬门禁、AI 草稿候选 Claim 逐条人工确认、确定性有效输出 Manifest |
+| └ Reviewer 签名与信任策略 | 已实现（可选）：OpenSSH Ed25519 签名链、Run 级不可变信任注册表快照 |
+| └ 本地 AI（Ollama） | 已实现：仅本机回环端点；NDJSON 流式生成、块间空闲超时与总时长预算；AI 审计角色、本地模型基准 |
+| └ 导出与交接 | 已实现：Obsidian Markdown 快照导出、面向外部 AI 的研究交接指令 |
+| └ 自动化测试与 CI | 已实现：标准库 `unittest` 套件（Ollama 全部 mock），GitHub Actions 在 Python 3.12 / 3.14 上运行 |
+| 符合 Foundation 的 Python Domain Kernel、Pack Compiler | 尚未实现，须先通过实现 RFC 门禁（MVP 不替代它们） |
+| Runtime 编排（LangGraph Adapter）、PostgreSQL、Docker Sandbox | 尚未实现 |
+| 远程/云端模型 Provider、实时联网检索 | 尚未实现（MVP 仅支持本机 Ollama） |
 | Web Console、Plugin、APES Project | 尚未激活 |
 
 ## 从这里开始
@@ -92,7 +103,8 @@ Deliverable 和审计记录。
 ---
 
 **English summary:** Research-OS is currently a documentation-first Foundation RC for
-an auditable, evidence-first AI research runtime. It does not yet ship executable
-runtime code or an activated project. Start with the
+an auditable, evidence-first AI research runtime. Apart from an isolated,
+non-normative local MVP prototype in `.codex-mvp-phase1/`, it does not yet ship a
+Foundation-conformant runtime or an activated project. Start with the
 [implementation plan](./IMPLEMENTATION-PLAN.md) and the
 [Foundation index](./FOUNDATION/README.md).
