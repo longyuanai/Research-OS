@@ -1,0 +1,48 @@
+name: MVP tests
+
+# Linux equivalent of .codex-mvp-phase1/run-tests.ps1:
+#   python -m unittest discover -s tests
+# The suite is stdlib-only and never contacts a real Ollama server
+# (all AI calls are mocked); tests that need ssh-keygen skip when absent.
+
+on:
+  push:
+    branches: [main, "codex/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mvp-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unittest:
+    name: unittest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    defaults:
+      run:
+        working-directory: .codex-mvp-phase1
+    env:
+      PYTHONUTF8: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+
+      - name: Show interpreter
+        run: python -VV
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
