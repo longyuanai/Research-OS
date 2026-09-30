@@ -23,6 +23,10 @@ build/
 dist/
 *.egg-info/
 
+# Local handoff and backup artifacts
+.codex-mvp-phase1-backup/
+Research-OS继续任务.txt
+
 # JavaScript / web
 node_modules/
 .next/
