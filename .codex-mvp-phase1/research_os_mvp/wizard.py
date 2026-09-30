@@ -4,6 +4,7 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import replace
+from datetime import UTC, datetime
 from difflib import unified_diff
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,11 @@ from research_os_mvp.ai import (
     check_ollama,
     generate_research,
     load_ai_settings,
+)
+from research_os_mvp.claim_candidates import (
+    classify_claim_candidates,
+    extract_claim_candidates,
+    find_ai_draft_policy_violations,
 )
 from research_os_mvp.errors import IntegrityError, MVPError, RunStateError
 from research_os_mvp.exporters import export_run_to_obsidian
@@ -34,8 +40,11 @@ from research_os_mvp.pack import load_pack
 from research_os_mvp.runtime import (
     approve_run,
     cancel_run,
+    claims_coverage_status,
     create_run,
+    read_claim_source_snapshot,
     read_effective_run_snapshot,
+    record_confirmed_claims,
     record_supplemental_evidence,
     resume_run,
     review_run,
@@ -291,6 +300,55 @@ def _ai_evidence_for_task(run_dir: Path, task_id: str) -> list[dict[str, Any]]:
         if value.get("task_id") == task_id and value.get("evidence_role") == "ai_draft":
             evidence.append(value)
     return evidence
+
+
+def _confirm_ai_draft_claims(
+    run_dir: Path,
+    task_id: str,
+    input_fn: InputFn,
+    output_fn: OutputFn,
+) -> dict[str, Any] | None:
+    drafts = _ai_evidence_for_task(run_dir, task_id)
+    if not drafts:
+        output_fn("当前 Task 没有可抽取 Claim 的本地 AI 草稿。")
+        return None
+    source_path, source_hash, content = read_claim_source_snapshot(run_dir, task_id)
+    source_label = source_path.relative_to(run_dir).as_posix()
+    candidates = extract_claim_candidates(content)
+    output_fn(
+        f"当前 Claim 源：{source_label}；SHA-256：{source_hash}。"
+    )
+    output_fn(
+        f"已用确定性规则抽取 {len(candidates)} 条候选 Claim；未再次调用 AI。\n"
+        "草稿正文中的“来源：...”不被信任，也不会转换成 Evidence 引用。\n"
+        "所有候选固定从 support=unsupported、evidence_ids=[] 开始。"
+    )
+    claims = classify_claim_candidates(
+        candidates,
+        input_fn=input_fn,
+        output_fn=output_fn,
+    )
+    if claims is None:
+        return None
+    confirmed_by = (
+        input_fn("确认人 [Human Owner (Easy Mode)]：").strip()
+        or "Human Owner (Easy Mode)"
+    )
+    recorded = record_confirmed_claims(
+        run_dir,
+        task_id=task_id,
+        expected_source_artifact_sha256=source_hash,
+        confirmed_by=confirmed_by,
+        confirmed_at=datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        claims=claims,
+    )
+    coverage = claims_coverage_status(run_dir)
+    output_fn(
+        f"已通过 record_confirmed_claims 记录 {len(claims)} 条 Claim；"
+        f"hard_gate_pass={coverage['hard_gate_pass']}；"
+        f"fact_coverage={coverage['fact_coverage']}。"
+    )
+    return recorded
 
 
 def _source_evidence_for_task(run_dir: Path, task_id: str) -> list[dict[str, Any]]:
@@ -774,6 +832,7 @@ def _easy_approval_loop(
     imports = {"f", "file", "文件", "导入"}
     audits = {"v", "verify", "audit", "复核", "审计"}
     ai_retries = {"a", "ai", "重试"}
+    claim_confirmations = {"c", "claim", "claims", "断言", "确认断言"}
     automatic_attempted = False
     ai_attempt_failed = False
     template_warning_shown = False
@@ -849,11 +908,41 @@ def _easy_approval_loop(
             and settings is not None
             and not _ai_evidence_for_task(run_dir, status["pending_task_id"])
         )
+        claim_drafts = (
+            _ai_evidence_for_task(run_dir, status["pending_task_id"])
+            if task_two_pending
+            else []
+        )
+        claim_action_available = task_two_pending and bool(claim_drafts)
+        policy_violations: list[str] = []
+        claims_recorded = False
+        if claim_action_available:
+            _, _, claim_source_content = read_claim_source_snapshot(
+                run_dir,
+                status["pending_task_id"],
+            )
+            policy_violations = find_ai_draft_policy_violations(claim_source_content)
+            claim_coverage = claims_coverage_status(run_dir)
+            claims_recorded = (
+                status["pending_task_id"] in claim_coverage["tasks_confirmed"]
+            )
+        policy_confirmation_required = bool(policy_violations) and not claims_recorded
+        if policy_confirmation_required:
+            output_fn(
+                f"守约门槛：当前草稿含 {len(policy_violations)} 条表面来源声明；"
+                "批准前必须按 C 逐条分类并确认 Claims。"
+            )
         if task_two_pending:
             retry_option = "A 重试 AI；" if retry_available else ""
+            claim_option = (
+                ("C 重新确认 Claims；" if claims_recorded else "C 逐条确认 Claims；")
+                if claim_action_available
+                else ""
+            )
             prompt = (
                 "Reviewer 决定：Y Approved；R Changes Requested；"
-                f"X Rejected；F 导入资料；V AI 审计；{retry_option}回车暂停："
+                "X Rejected；F 导入资料；V AI 审计；"
+                f"{claim_option}{retry_option}回车暂停："
             )
         else:
             prompt = (
@@ -883,6 +972,20 @@ def _easy_approval_loop(
                 ai_attempt_failed = True
                 output_fn(f"本地 AI 重试未完成：{exc}")
                 output_fn(_missing_ai_draft_guidance(prior_failure=True))
+            continue
+        if answer in claim_confirmations:
+            if not claim_action_available:
+                output_fn("C Claim 确认仅在第 2 步已有本地 AI 草稿时使用。")
+                continue
+            try:
+                _confirm_ai_draft_claims(
+                    run_dir,
+                    status["pending_task_id"],
+                    input_fn,
+                    output_fn,
+                )
+            except MVPError as exc:
+                output_fn(f"Claim 确认未完成：{exc}")
             continue
         if answer in reworks:
             feedback = input_fn("请记录 Changes Requested 的具体修改要求：")
@@ -986,10 +1089,18 @@ def _easy_approval_loop(
             except MVPError as exc:
                 output_fn(f"AI 审计未完成：{exc}")
             continue
+        if answer in approvals and policy_confirmation_required:
+            output_fn(
+                "本次未批准：表面来源声明尚未完成人工 Claim 确认。"
+                "请先按 C 逐条分类，或按 R 修订草稿。"
+            )
+            continue
         if answer not in approvals:
             accepted = "Y、R、X、F、V、N"
             if retry_available:
                 accepted += "、A"
+            if claim_action_available:
+                accepted += "、C"
             output_fn(
                 f"这里仅接收 {accepted} 或直接回车；"
                 "刚才的文字没有写入任务。"

@@ -571,6 +571,40 @@ Ollama 生成由后台守护读取线程逐行接收 NDJSON 数据块，主控�
 不变。`configure-ollama` 会说明较大模型可能需要数分钟，若过慢可由用户
 重新选择更小模型；它不会自动更换模型或运行基准测试。
 
+## C4：AI 候选 Claim 抽取与人工确认（2026-08-21）
+
+简易模式第 2 步在存在 `ollama://` AI 草稿时显示 `C 逐条确认 Claims`；已有该
+Task 的 Claim 工件时显示 `C 重新确认 Claims`。C 与既有的 `Y/R/X/F/V/A/回车`
+互不冲突。选择 C 后，系统不会再次调用模型，而是按 Markdown 标题和列表/句子边界，
+从“逐条证据清单”和“推荐方案及适用条件”两个候选段确定性切分原文。比较表不重复
+抽取，反引号或波浪号围栏代码块会整体跳过；澄清问题、风险、实验计划和结论变更
+条件仍作为草稿上下文保留。
+
+抽取器不判断 Claim 类型，也不信任草稿自述的引用。每条候选固定以
+`support: "unsupported"`、`evidence_ids: []` 开始；正文中的
+`来源：Python 官方文档，2023-01-01` 等字符串只作为待人工审查的原文保留，绝不会
+转换成 Evidence 引用。只有 Run 内真实存在的 Evidence ID 才能由 C1 校验接受。
+
+如果当前有效草稿含“来源：”“参考文献：”或 `Source:` 这类非占位声明，
+简易模式会启用内容守约门槛：在当前源完成 C 确认前，直接输入 Y 不会写入批准。
+这一步只保证声明被人类看见和分类，不代表来源已经真实或事实已经得到支持；
+Claim 引用硬门禁仍按后文 C2-S4 的独立 Run 策略执行。
+
+人类必须逐条选择 `verifiable_fact`、`interpretation`、`recommendation` 或
+`assumption`，随后可按编号逐条修改。没有批量降级或一键分类；必须完成全部条目并
+精确输入 `CONFIRM`，系统才调用既有 `record_confirmed_claims`。候选抽取与最终
+写入绑定同一个在 Run 锁内读取的源路径和 SHA-256；确认期间若 AI 草稿或人工修订发生
+变化，写入会拒绝并要求重新开始。任一条未分类、直接回车或未最终确认时，本次不写
+任何 Claim，`claims_confirmed` 保持原状态。
+
+可复用已有真实 Run 做离线 Claim 验收，不重新生成 AI 草稿；工具会复制 Run 到独立的
+`e2e-runs/claim-smoke-*` 后再进行人工分类，源 Run 保持不变：
+
+```powershell
+& $MvpPython .\tools\e2e_smoke.py `
+  --claims-from-run .\e2e-runs\smoke-20260820t155251z-8ffbcd65\runs\run-20260820t155251z-703de4bf
+```
+
 ## 测试
 
 ```powershell
@@ -580,6 +614,20 @@ Ollama 生成由后台守护读取线程逐行接收 NDJSON 数据块，主控�
 旧 Run 回归样本以 `tests/fixtures/legacy-runs.bundle.json` 随测试版本化；测试运行时
 在临时目录按 Base64 原字节还原，不依赖被忽略的 `workspace/runs`。因此干净克隆
 与开发机本地状态使用同一夹具。
+
+真实本地 AI 产品路径使用独立的 E2E 冒烟脚本；它不属于默认 `unittest` 套件。
+脚本只读 `workspace/settings.json` 中的 Ollama 配置，先检查服务和模型，再把新 Run
+写到已忽略的 `e2e-runs/`，不会写入 `workspace/`。建议在 Ollama 配置或流式调用链
+变更后，以及准备阶段验收前运行：
+
+```powershell
+& $MvpPython .\tools\e2e_smoke.py
+```
+
+退出码 `0` 表示已取得正文超过 100 字符的 `ollama://` Evidence 且 Run 验证通过；
+`1` 表示产品路径或证据检查失败；`2` 表示 Ollama 配置、服务或模型不可用而跳过。
+成功输出会保留本次 Run 完整路径，并打印总耗时、AI 生成耗时、Evidence 来源清单和
+AI 正文前 200 字，便于人工复核。
 
 ## 已知限制
 

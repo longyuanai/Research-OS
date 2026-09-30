@@ -902,6 +902,25 @@ def record_supplemental_evidence(
         )
 
 
+def read_claim_source_snapshot(
+    run_dir: Path | str,
+    task_id: str,
+) -> tuple[Path, str, str]:
+    """Read one current Claim source and its hash under the Run lock."""
+
+    path = Path(run_dir)
+    with run_lock(path):
+        try:
+            _verify_run_unlocked(path)
+        except StaleClaimsError as exc:
+            if exc.task_id != task_id:
+                raise
+        state = _load_state(path)
+        if task_id not in state["executed_tasks"]:
+            raise RunStateError("Claims can only be confirmed for an executed Task")
+        return current_task_source(path, task_id)
+
+
 def record_confirmed_claims(
     run_dir: Path | str,
     *,
@@ -909,6 +928,7 @@ def record_confirmed_claims(
     confirmed_by: str,
     confirmed_at: str,
     claims: list[dict[str, Any]],
+    expected_source_artifact_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Persist an audited human-confirmed Claim set for one executed Task."""
     path = Path(run_dir)
@@ -926,6 +946,11 @@ def record_confirmed_claims(
         if task_id not in state["executed_tasks"]:
             raise RunStateError("Claims can only be recorded for an executed Task")
         _, source_hash, _ = current_task_source(path, task_id)
+        if (
+            expected_source_artifact_sha256 is not None
+            and source_hash != expected_source_artifact_sha256
+        ):
+            raise RunStateError("Claim source changed during confirmation; restart it")
         record = build_claims_record(
             run_id=state["run_id"],
             task_id=task_id,
